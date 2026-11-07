@@ -169,15 +169,14 @@ return [
         'search_url' => 'https://www.faces.eg/en/search?q=:search_term',
         'extraction_strategy' => [
             'list_container' => ['type' => 'selector', 'value' => '!div.js-product-tile'],
-            'product_title' => ['type' => 'selector', 'value' => '.product-tile-name-link'],
+            // Brand + name, e.g. "Bourjois Rouge Velvet The Lipstick".
+            'product_title' => ['type' => 'selector', 'value' => '.tile-body h2'],
             'product_url' => ['type' => 'selector', 'value' => 'a.product-tile-name-link|href', 'prepend' => 'https://www.faces.eg'],
             'product_price' => ['type' => 'selector', 'value' => '.price .js-price'],
         ],
-        'settings' => [
-            'scraper_service' => ScraperService::Http->value,
-            // Brand filter takes the exact brand name, e.g. Bourjois.
-            'brand_param' => '&prefn1=brand&prefv1={brand}',
-        ],
+        // Faces' brand filter (&prefn1=brand&prefv1=<Brand>) only works in a normal browser
+        // session, so brands are matched in the title instead.
+        'settings' => ['scraper_service' => ScraperService::Http->value],
     ],
     [
         'name' => 'IKEA Egypt',
