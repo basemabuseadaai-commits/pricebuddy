@@ -29,6 +29,7 @@ class SavedSearchRunner
     {
         $product = $this->ensureProduct($search);
         $picks = collect();
+        $rejected = [];
         $perSource = [];
 
         foreach ($this->sources($search) as $source) {
@@ -43,6 +44,15 @@ class SavedSearchRunner
                     $search->max_price,
                 );
                 $cheapest = self::cheapest($kept, $search->per_shop);
+
+                // Results that fail the filters now, e.g. after the filters were changed.
+                $keptKeys = $kept->map(fn ($r) => self::matchKey((string) $r['url']))->flip();
+                foreach ($results as $result) {
+                    $key = self::matchKey((string) ($result['url'] ?? ''));
+                    if (! $keptKeys->has($key)) {
+                        $rejected[$key] = true;
+                    }
+                }
                 $picks = $picks->merge($cheapest);
                 $perSource[$source->name] = [
                     'found' => $results->count(),
@@ -60,7 +70,7 @@ class SavedSearchRunner
         }
 
         [$added, $failed] = $this->addUrls($search, $product, $picks);
-        $removed = $this->forgetStaleUrls($search, $product, $picks);
+        $removed = $this->forgetStaleUrls($search, $product, $picks, $rejected);
 
         $summary = [
             'sources' => $perSource,
@@ -296,13 +306,16 @@ class SavedSearchRunner
      *
      * @param  Collection<int, array<string, mixed>>  $picks
      */
-    protected function forgetStaleUrls(SavedSearch $search, Product $product, Collection $picks): int
+    protected function forgetStaleUrls(SavedSearch $search, Product $product, Collection $picks, array $rejected = []): int
     {
         $seen = $search->seen_urls ?? [];
         $now = now();
+        $picked = [];
 
         foreach ($picks as $pick) {
-            $seen[self::matchKey((string) $pick['url'])] = $now->toIso8601String();
+            $key = self::matchKey((string) $pick['url']);
+            $seen[$key] = $now->toIso8601String();
+            $picked[$key] = true;
         }
 
         $cutoff = $now->copy()->subDays(self::FORGET_AFTER_DAYS);
@@ -313,7 +326,10 @@ class SavedSearchRunner
             $lastSeen = $seen[$normalized] ?? null;
 
             // Only URLs this search added; links the user added by hand stay.
-            if ($lastSeen && $now->parse($lastSeen)->lt($cutoff)) {
+            // Removed when not picked for a while, or straight away when the
+            // shop still lists them but they no longer pass the filters.
+            $failsFilters = isset($rejected[$normalized]) && ! isset($picked[$normalized]);
+            if ($lastSeen && ($failsFilters || $now->parse($lastSeen)->lt($cutoff))) {
                 $url->delete();
                 unset($seen[$normalized]);
                 $removed++;
