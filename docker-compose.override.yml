@@ -4,6 +4,7 @@
 services:
     app:
         environment:
+            APP_NAME: BSBS PRICE CHECKER
             APP_CURRENCY_LOCALE: ar_EG   # default currency: EGP
             APP_TIMEZONE: Africa/Cairo
             AFFILIATE_ENABLED: 'false'   # don't rewrite shop links with affiliate codes
@@ -25,3 +26,5 @@ services:
             - ./app/Console/Commands/RunSavedSearches.php:/app/app/Console/Commands/RunSavedSearches.php:ro
             - ./app/Filament/Resources/SavedSearchResource.php:/app/app/Filament/Resources/SavedSearchResource.php:ro
             - ./app/Filament/Resources/SavedSearchResource:/app/app/Filament/Resources/SavedSearchResource:ro
+            # App name in the logo.
+            - ./resources/views/filament/logo.blade.php:/app/resources/views/filament/logo.blade.php:ro
