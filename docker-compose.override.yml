@@ -7,6 +7,7 @@ services:
             APP_CURRENCY_LOCALE: ar_EG   # default currency: EGP
             APP_TIMEZONE: Africa/Cairo
             AFFILIATE_ENABLED: 'false'   # don't rewrite shop links with affiliate codes
+            DEFAULT_STORES_COUNTRY: egypt  # a fresh install only creates the Egyptian shops
         volumes:
             - ./database/seeders/Stores/egypt.php:/app/database/seeders/Stores/egypt.php:ro
             - ./database/seeders/ProductSources:/app/database/seeders/ProductSources:ro
