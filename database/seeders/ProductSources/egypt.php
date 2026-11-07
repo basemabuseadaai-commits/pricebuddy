@@ -137,7 +137,9 @@ return [
             'product_title' => ['type' => 'selector', 'value' => '.product-description'],
             'product_url' => ['type' => 'selector', 'value' => 'a.link|href', 'prepend' => 'https://www.lcwaikiki.eg'],
             // Shelf price. Some cards also show a lower "in basket" price in .price-in-cart.
-            'product_price' => ['type' => 'selector', 'value' => '.current-price'],
+            // The price in basket (applied automatically, no code) when there is one,
+            // otherwise the list price. Their schema.org offer uses the same number.
+            'product_price' => ['type' => 'selector', 'value' => '.price-in-cart, .current-price:not(.current-price--has-basket)'],
         ],
         'settings' => ['scraper_service' => ScraperService::Api->value, 'sole_brand' => 'LC Waikiki'],
     ],
@@ -181,7 +183,10 @@ return [
             // Brand + name, e.g. "Bourjois Rouge Velvet The Lipstick".
             'product_title' => ['type' => 'selector', 'value' => '.tile-body h2'],
             'product_url' => ['type' => 'selector', 'value' => 'a.product-tile-name-link|href', 'prepend' => 'https://www.faces.eg'],
-            'product_price' => ['type' => 'selector', 'value' => '.price .js-price'],
+            // The price you pay. On sale cards the first .js-price is the crossed-out
+            // list price; the paid price is always inside .js-price-color. Shade ranges
+            // show "from" the cheapest shade.
+            'product_price' => ['type' => 'selector', 'value' => '.price .js-price-color .js-price'],
         ],
         // Faces' brand filter (&prefn1=brand&prefv1=<Brand>) only works in a normal browser
         // session, so brands are matched in the title instead.

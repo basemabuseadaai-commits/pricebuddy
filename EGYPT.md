@@ -81,7 +81,7 @@ are often just model names ("Court Vision Lo"). Other shops are searched as usua
    ```
 
 5. Open <http://localhost:8080> and sign in with `admin@example.com` / `admin`.
-   Change the password under your profile.
+   The app then asks for your own email and a new password before anything else.
 6. In **Settings**, check that the default currency is **EGP**.
 
 ## Adding items to watch
