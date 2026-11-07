@@ -44,7 +44,9 @@ class ProductSourceSearchService
             ->from($this->buildSearchUrl($query, $brand))
             // Same page cache time as product pages (Settings > Scrape cache ttl).
             ->setCacheMinsTtl(AppSettings::new()->scrape_cache_ttl)
-            ->setUseCache($useCache);
+            ->setUseCache($useCache)
+            // e.g. ['sleep' => 8000] for pages that fill in their products slowly.
+            ->setOptions((array) data_get($this->source->settings, 'scraper_options', []));
     }
 
     /**

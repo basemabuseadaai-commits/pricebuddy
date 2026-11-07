@@ -10,8 +10,9 @@ This fork adds Egyptian shops, their search pages and EGP prices to PriceBuddy.
 | noon EG | Works (browser scraper) | Works (browser scraper) |
 | Carrefour EG | Works (browser scraper) | Works (browser scraper) |
 | Jumia EG | Blocked by Cloudflare | Blocked (Draft) |
-| IKEA EG, Raneen | Not tested yet | None yet |
-| Hyper One, LC Waikiki, DeFacto, American Eagle (browser scraper), Faces | Added, product pages not tested yet | None yet |
+| DeFacto, Faces | Added, not tested yet | Works (Faces has a brand filter; DeFacto titles are Arabic) |
+| LC Waikiki, American Eagle, IKEA EG, Raneen | Added, not tested yet | Works (browser scraper) |
+| Hyper One | Added, not tested yet | Works (browser scraper, waits 8 s for products) |
 
 Tested from an Egyptian home connection in November 2026.
 

@@ -97,4 +97,115 @@ return [
             ],
         ],
     ],
+
+    // Checked from Egypt on 2026-11-07 with the app's own parser (search pages only).
+    [
+        'name' => 'Hyper One',
+        'store' => 'hyper-one',
+        'type' => ProductSourceType::OnlineStore,
+        'status' => ProductSourceStatus::Active,
+        'search_url' => 'https://www.hyperone.com.eg/en/search?q=:search_term',
+        'extraction_strategy' => [
+            'list_container' => ['type' => 'selector', 'value' => '!article.ProductCard'],
+            'product_title' => ['type' => 'selector', 'value' => '.product-name'],
+            'product_url' => ['type' => 'selector', 'value' => '.ProductCard__Body a|href', 'prepend' => 'https://www.hyperone.com.eg'],
+            'product_price' => ['type' => 'selector', 'value' => '.currency'],
+        ],
+        'settings' => [
+            'scraper_service' => ScraperService::Api->value,
+            // Products only appear about 8 seconds after the page loads.
+            'scraper_options' => ['sleep' => 8000],
+        ],
+    ],
+    [
+        'name' => 'LC Waikiki',
+        'store' => 'lc-waikiki-eg',
+        'type' => ProductSourceType::OnlineStore,
+        'status' => ProductSourceStatus::Active,
+        'search_url' => 'https://www.lcwaikiki.eg/en/search?q=:search_term',
+        'extraction_strategy' => [
+            'list_container' => ['type' => 'selector', 'value' => '!div.product-card'],
+            'product_title' => ['type' => 'selector', 'value' => '.product-description'],
+            'product_url' => ['type' => 'selector', 'value' => 'a.link|href', 'prepend' => 'https://www.lcwaikiki.eg'],
+            // Shelf price. Some cards also show a lower "in basket" price in .price-in-cart.
+            'product_price' => ['type' => 'selector', 'value' => '.current-price'],
+        ],
+        'settings' => ['scraper_service' => ScraperService::Api->value],
+    ],
+    [
+        'name' => 'DeFacto',
+        'store' => 'defacto-eg',
+        'type' => ProductSourceType::OnlineStore,
+        'status' => ProductSourceStatus::Active,
+        // Titles come back in Arabic.
+        'search_url' => 'https://www.defacto.com.eg/search?q=:search_term',
+        'extraction_strategy' => [
+            'list_container' => ['type' => 'selector', 'value' => '!div.product-card'],
+            'product_title' => ['type' => 'selector', 'value' => '.product-card__title--name'],
+            'product_url' => ['type' => 'selector', 'value' => 'a.product-card__title--name|href', 'prepend' => 'https://www.defacto.com.eg'],
+            'product_price' => ['type' => 'selector', 'value' => '.base-price'],
+        ],
+        'settings' => ['scraper_service' => ScraperService::Http->value],
+    ],
+    [
+        'name' => 'American Eagle',
+        'store' => 'american-eagle-eg',
+        'type' => ProductSourceType::OnlineStore,
+        'status' => ProductSourceStatus::Active,
+        'search_url' => 'https://www.americaneagle.com.eg/en/search?q=:search_term',
+        'extraction_strategy' => [
+            'list_container' => ['type' => 'selector', 'value' => '!div.product-item.card'],
+            'product_title' => ['type' => 'selector', 'value' => '.product-item-title'],
+            'product_url' => ['type' => 'selector', 'value' => 'a.product-item-title|href', 'prepend' => 'https://www.americaneagle.com.eg'],
+            'product_price' => ['type' => 'selector', 'value' => '.item-price'],
+        ],
+        'settings' => ['scraper_service' => ScraperService::Api->value],
+    ],
+    [
+        'name' => 'Faces',
+        'store' => 'faces-eg',
+        'type' => ProductSourceType::OnlineStore,
+        'status' => ProductSourceStatus::Active,
+        'search_url' => 'https://www.faces.eg/en/search?q=:search_term',
+        'extraction_strategy' => [
+            'list_container' => ['type' => 'selector', 'value' => '!div.js-product-tile'],
+            'product_title' => ['type' => 'selector', 'value' => '.product-tile-name-link'],
+            'product_url' => ['type' => 'selector', 'value' => 'a.product-tile-name-link|href', 'prepend' => 'https://www.faces.eg'],
+            'product_price' => ['type' => 'selector', 'value' => '.price .js-price'],
+        ],
+        'settings' => [
+            'scraper_service' => ScraperService::Http->value,
+            // Brand filter takes the exact brand name, e.g. Bourjois.
+            'brand_param' => '&prefn1=brand&prefv1={brand}',
+        ],
+    ],
+    [
+        'name' => 'IKEA Egypt',
+        'store' => 'ikea-eg',
+        'type' => ProductSourceType::OnlineStore,
+        'status' => ProductSourceStatus::Active,
+        'search_url' => 'https://www.ikea.com/eg/en/search/?q=:search_term',
+        'extraction_strategy' => [
+            'list_container' => ['type' => 'selector', 'value' => '!div.plp-mastercard'],
+            // The link label is the full name, e.g. "TAGGHAJ, Frying pan, non-stick coating black, 24 cm".
+            'product_title' => ['type' => 'selector', 'value' => 'a.plp-price-module__product-link|aria-label'],
+            'product_url' => ['type' => 'selector', 'value' => 'a.plp-price-module__product-link|href'],
+            'product_price' => ['type' => 'selector', 'value' => '.plp-price-module__current-price .plp-price__integer'],
+        ],
+        'settings' => ['scraper_service' => ScraperService::Api->value],
+    ],
+    [
+        'name' => 'Raneen',
+        'store' => 'raneen',
+        'type' => ProductSourceType::OnlineStore,
+        'status' => ProductSourceStatus::Active,
+        'search_url' => 'https://www.raneen.com/en/catalogsearch/result/?q=:search_term',
+        'extraction_strategy' => [
+            'list_container' => ['type' => 'selector', 'value' => '!article.product-item'],
+            'product_title' => ['type' => 'selector', 'value' => 'a.product-item-link'],
+            'product_url' => ['type' => 'selector', 'value' => 'a.product-item-link|href'],
+            'product_price' => ['type' => 'selector', 'value' => '[data-price-type=finalPrice] .price'],
+        ],
+        'settings' => ['scraper_service' => ScraperService::Api->value],
+    ],
 ];

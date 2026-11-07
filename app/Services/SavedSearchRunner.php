@@ -158,6 +158,17 @@ class SavedSearchRunner
             return $m[1];
         }
 
+        // Drop tracking parameters (DeFacto adds ?waw_keyword=<search text>).
+        $parts = parse_url($url);
+        if (! empty($parts['query'])) {
+            parse_str($parts['query'], $query);
+            $kept = array_filter($query, fn ($key) => ! preg_match('/^(waw_keyword|utm_\w+)$/i', (string) $key), ARRAY_FILTER_USE_KEY);
+
+            if (count($kept) !== count($query)) {
+                $url = Str::before($url, '?').($kept ? '?'.http_build_query($kept) : '').(isset($parts['fragment']) ? '#'.$parts['fragment'] : '');
+            }
+        }
+
         return $url;
     }
 

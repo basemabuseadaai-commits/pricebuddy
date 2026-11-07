@@ -60,6 +60,18 @@ class SavedSearchRunnerTest extends TestCase
         );
     }
 
+    public function test_tracking_parameters_are_dropped()
+    {
+        $this->assertSame(
+            'https://www.defacto.com.eg/jeans-123',
+            SavedSearchRunner::canonicalUrl('https://www.defacto.com.eg/jeans-123?waw_keyword=jeans')
+        );
+        $this->assertSame(
+            'https://a.eg/p?id=2',
+            SavedSearchRunner::canonicalUrl('https://a.eg/p?id=2&utm_source=x')
+        );
+    }
+
     public function test_words_match_whole_words_and_plurals()
     {
         $this->assertFalse(SavedSearchRunner::hasWord('Braided rug', 'bra'));

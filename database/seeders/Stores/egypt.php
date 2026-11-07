@@ -113,9 +113,9 @@ return [
             ['domain' => 'hyperone.com.eg'],
             ['domain' => 'www.hyperone.com.eg'],
         ],
-        // Pages are built in the browser. Product-page data not checked yet.
+        // Pages are built in the browser and fill in slowly. Product-page data not checked yet.
         'scrape_strategy' => $schemaOrg,
-        'settings' => $browser,
+        'settings' => array_merge($browser, ['scraper_service_settings' => 'sleep=8000']),
     ],
 
     // Fashion brands. Plain requests get 403, the browser scraper works.
