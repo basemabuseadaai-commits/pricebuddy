@@ -45,12 +45,20 @@ return [
                 'type' => 'selector',
             ],
             'price' => [
-                'value' => '.a-price > .a-offscreen',
+                // The first .a-price on the page is often an empty placeholder.
+                'value' => '#corePrice_feature_div .a-price .a-offscreen',
                 'type' => 'selector',
             ],
             'image' => [
-                'value' => '~"hiRes":"(.+?)"~',
-                'type' => 'regex',
+                'value' => '#landingImage|src',
+                'type' => 'selector',
+            ],
+            'availability' => [
+                'value' => '#availability span',
+                'type' => 'selector',
+                'match' => [
+                    'out_of_stock' => ['type' => 'regex', 'value' => 'unavailable|out of stock'],
+                ],
             ],
         ],
         'settings' => $egp,
