@@ -2,6 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\EditProfile;
+use App\Filament\Pages\Auth\Register;
 use App\Filament\Pages\HomeDashboard;
 use App\Filament\Pages\Login;
 use App\Filament\Pages\StatusPage;
@@ -9,6 +11,8 @@ use App\Filament\Plugins\ApiKeyPlugin;
 use App\Filament\Resources\ApiKeyResource;
 use App\Filament\Resources\LogMessageResource;
 use App\Filament\Resources\NotificationHistoryResource;
+use App\Http\Middleware\RequirePasswordChange;
+use App\Http\Middleware\SecurityHeaders;
 use Awcodes\FilamentQuickCreate\QuickCreatePlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -43,6 +47,12 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(fn () => view('filament.logo'))
             ->favicon(asset('/favicon.ico'))
             ->login(Login::class)
+            // "Forgot password" (sends a reset link; needs email set up in Settings).
+            ->passwordReset()
+            // "My profile": name, email, password (current password required).
+            ->profile(EditProfile::class, isSimple: false)
+            // Sign-up page only when ALLOW_REGISTRATION=true (config/accounts.php).
+            ->registration(config('accounts.registration') ? Register::class : null)
             ->maxContentWidth(MaxWidth::Full)
             ->colors([
                 'primary' => self::PRIMARY_COLOR,
@@ -92,9 +102,12 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                SecurityHeaders::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
+                // Default sign-in details must be changed before anything else.
+                RequirePasswordChange::class,
             ])
             ->breadcrumbs(false)
             ->databaseNotifications();

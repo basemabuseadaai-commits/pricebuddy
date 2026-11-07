@@ -25,6 +25,14 @@ class SavedSearchResource extends Resource
 
     protected static ?string $navigationLabel = 'Saved searches';
 
+    /**
+     * Each account only sees and opens its own saved searches, also by direct address.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->where('user_id', auth()->id());
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([

@@ -12,6 +12,13 @@ services:
             # Contact sent to shops that only allow identified bots (Jumia). Set BOT_CONTACT
             # in the .env file next to this one; it is not stored in the repository.
             BOT_CONTACT: ${BOT_CONTACT:-}
+            # Security (see config/accounts.php).
+            APP_ENV: production
+            APP_DEBUG: 'false'
+            ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-false}   # true shows a "Sign up" link
+        # Only this PC can open the app. For phone access use a private link (Tailscale).
+        ports: !override
+            - 127.0.0.1:8080:80
         volumes:
             - ./database/seeders/Stores/egypt.php:/app/database/seeders/Stores/egypt.php:ro
             - ./database/seeders/ProductSources:/app/database/seeders/ProductSources:ro
@@ -37,5 +44,19 @@ services:
             # Identified bot for Jumia (config/scraper_bot.php).
             - ./config/scraper_bot.php:/app/config/scraper_bot.php:ro
             - ./app/Services/Scrapers/Utf8WebScraperHttp.php:/app/app/Services/Scrapers/Utf8WebScraperHttp.php:ro
+            # Accounts and security: sign-up, password reset, profile, password rules,
+            # forced change of default sign-in details, security headers.
+            - ./config/accounts.php:/app/config/accounts.php:ro
+            - ./app/Services/Accounts:/app/app/Services/Accounts:ro
+            - ./app/Filament/Pages/Auth:/app/app/Filament/Pages/Auth:ro
+            - ./app/Http/Middleware/RequirePasswordChange.php:/app/app/Http/Middleware/RequirePasswordChange.php:ro
+            - ./app/Http/Middleware/SecurityHeaders.php:/app/app/Http/Middleware/SecurityHeaders.php:ro
+            - ./app/Providers/Filament/AdminPanelProvider.php:/app/app/Providers/Filament/AdminPanelProvider.php:ro
+            - ./app/Filament/Resources/UserResource.php:/app/app/Filament/Resources/UserResource.php:ro
+            - ./app/Filament/Resources/UserResource/Pages/CreateUser.php:/app/app/Filament/Resources/UserResource/Pages/CreateUser.php:ro
             # App name in the logo.
             - ./resources/views/filament/logo.blade.php:/app/resources/views/filament/logo.blade.php:ro
+
+    # The scraper is only used by the app inside Docker; don't open it to the network.
+    scraper:
+        ports: !reset []
