@@ -9,7 +9,9 @@ This fork adds Egyptian shops, their search pages and EGP prices to PriceBuddy.
 | Amazon EG | Works | Works |
 | noon EG | Works (browser scraper) | Works (browser scraper) |
 | Carrefour EG | Works (browser scraper) | Works (browser scraper) |
-| Jumia EG | Identified bot only: set `BOT_CONTACT` in `.env` (see `config/scraper_bot.php`) | Draft until checked |
+| Jumia EG | Works as an identified bot (`BOT_CONTACT` in `.env`, see `config/scraper_bot.php`); selectors | Doesn't answer bots (Draft) |
+| talabat mart (Mivida) | Works (Schema.org) | No web search: reads listed category pages and filters by the search words |
+| noon Minutes | Works (browser scraper; default Cairo area) | Works (browser scraper) |
 | DeFacto, Faces | Added, not tested yet | Works (DeFacto titles are Arabic) |
 | LC Waikiki, American Eagle, IKEA EG, Raneen | Added, not tested yet | Works (browser scraper) |
 | Hyper One | Works (selectors; browser scraper, waits 8 s) | Works (browser scraper, waits 8 s for products) |

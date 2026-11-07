@@ -8,6 +8,7 @@ use App\Services\Helpers\CurrencyHelper;
 use App\Settings\AppSettings;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Jez500\WebScraperForLaravel\Exceptions\DomSelectorException;
 use Jez500\WebScraperForLaravel\Facades\WebScraper;
 use Jez500\WebScraperForLaravel\WebScraperInterface;
@@ -92,6 +93,11 @@ class ProductSourceSearchService
      */
     public function search(string $query, ?string $brand = null): Collection
     {
+        // Shops without a web search (talabat mart): browse their category pages.
+        if (filled(data_get($this->source->settings, 'browse.urls'))) {
+            return $this->searchByBrowsing($query);
+        }
+
         if (filled($brand) && $this->supportsBrandFilter()) {
             $brand = $this->resolveBrand($query, $brand);
 
@@ -137,6 +143,88 @@ class ProductSourceSearchService
 
             return collect();
         }
+    }
+
+    /**
+     * For shops with no keyword search: read the product list embedded as JSON in
+     * each page of settings.browse.urls and keep the items whose title has every
+     * word of the query. settings.browse:
+     *   urls          category pages to read
+     *   script_id     id of the <script> holding the JSON, e.g. __NEXT_DATA__
+     *   items_path    dot path to the item list in that JSON
+     *   title, price  item keys
+     *   url_template  product link with {key} placeholders filled from the item
+     */
+    public function searchByBrowsing(string $query): Collection
+    {
+        $browse = (array) data_get($this->source->settings, 'browse', []);
+        $words = array_values(array_filter(preg_split('/\s+/u', Str::lower(trim($query)))));
+
+        return collect((array) ($browse['urls'] ?? []))
+            ->flatMap(fn ($url) => $this->browseItems((string) $url, $browse))
+            ->filter(function (array $item) use ($words) {
+                $title = Str::lower((string) $item['title']);
+
+                return collect($words)->every(fn ($word) => Str::contains($title, $word));
+            })
+            ->unique('url')
+            ->values();
+    }
+
+    /**
+     * @return array<int, array{title: string, url: string, price: ?float}>
+     */
+    public function browseItems(string $url, array $browse): array
+    {
+        $scraper = WebScraper::make($this->source->scraper_service);
+        if (filled($cookies = $this->source->store?->cookies)) {
+            $scraper->setCookies($cookies);
+        }
+
+        $html = $scraper->from($url)
+            ->setCacheMinsTtl(AppSettings::new()->scrape_cache_ttl)
+            ->setOptions((array) data_get($this->source->settings, 'scraper_options', []))
+            ->get()
+            ->getBody();
+
+        return self::itemsFromEmbeddedJson((string) $html, $browse);
+    }
+
+    /**
+     * @return array<int, array{title: string, url: string, price: ?float}>
+     */
+    public static function itemsFromEmbeddedJson(string $html, array $browse): array
+    {
+        $id = preg_quote((string) ($browse['script_id'] ?? '__NEXT_DATA__'), '~');
+        if (! preg_match('~<script[^>]*id=["\']'.$id.'["\'][^>]*>(.*?)</script>~s', $html, $m)) {
+            return [];
+        }
+
+        $json = json_decode(html_entity_decode($m[1], ENT_QUOTES | ENT_HTML5), true);
+        $items = data_get($json, (string) ($browse['items_path'] ?? ''), []);
+
+        return collect(is_array($items) ? $items : [])
+            ->filter(fn ($item) => is_array($item))
+            ->map(function (array $item) use ($browse) {
+                $title = trim((string) data_get($item, $browse['title'] ?? 'title', ''));
+                $price = data_get($item, $browse['price'] ?? 'price');
+                $missing = false;
+                $url = preg_replace_callback('/\{(\w+)\}/', function ($k) use ($item, &$missing) {
+                    $value = (string) data_get($item, $k[1], '');
+                    $missing = $missing || $value === '';
+
+                    return rawurlencode($value);
+                }, (string) ($browse['url_template'] ?? ''));
+
+                return [
+                    'title' => $title,
+                    'url' => $missing ? '' : $url,
+                    'price' => is_numeric($price) ? (float) $price : (filled($price) ? CurrencyHelper::toFloat((string) $price, 'en') : null),
+                ];
+            })
+            ->filter(fn ($item) => $item['title'] !== '' && $item['url'] !== '')
+            ->values()
+            ->all();
     }
 
     public function getHtml(string $query): ?string

@@ -236,4 +236,52 @@ return [
         ],
         'settings' => ['scraper_service' => ScraperService::Api->value, 'sole_brand' => 'adidas'],
     ],
+
+    [
+        // No web search: category pages for the Mivida store (aid=9289) are read and their
+        // items filtered by the search words. Prices are in the page's __NEXT_DATA__ JSON.
+        'name' => 'talabat mart',
+        'store' => 'talabat-mart',
+        'type' => ProductSourceType::OnlineStore,
+        'status' => ProductSourceStatus::Active,
+        'search_url' => 'https://www.talabat.com/egypt/grocery/745090/tmart-tagammoa-5-emaar-mivida?aid=9289',
+        'extraction_strategy' => [
+            // Unused while settings.browse is set; kept so the source validates.
+            'list_container' => ['type' => 'selector', 'value' => "!div[data-testid='grocery-item']"],
+            'product_title' => ['type' => 'selector', 'value' => '.truncate-grocery-item'],
+            'product_url' => ['type' => 'selector', 'value' => 'a|href'],
+            'product_price' => ['type' => 'selector', 'value' => "[data-testid='price'] .currency"],
+        ],
+        'settings' => [
+            'scraper_service' => ScraperService::Http->value,
+            'browse' => [
+                'script_id' => '__NEXT_DATA__',
+                'items_path' => 'props.pageProps.initialState.itemsData.items',
+                'title' => 'title',
+                'price' => 'price',
+                'url_template' => 'https://www.talabat.com/egypt/grocery/745090/tmart-tagammoa-5-emaar-mivida/product/{slug}/s/{sku}?aid=9289',
+                'urls' => [
+                    'https://www.talabat.com/egypt/grocery/745090/tmart-tagammoa-5-emaar-mivida/milk/fresh-milk?aid=9289',
+                    'https://www.talabat.com/egypt/grocery/745090/tmart-tagammoa-5-emaar-mivida/fruit-veg/best-in-season?aid=9289',
+                    'https://www.talabat.com/egypt/grocery/745090/tmart-tagammoa-5-emaar-mivida/poultry-meat-seafood/chicken-poultry?aid=9289',
+                ],
+            ],
+        ],
+    ],
+    [
+        // Prices are for noon's default Cairo area (the area can't be kept signed out).
+        // Class names carry a build hash (r4yxz) and may need updating after noon redeploys.
+        'name' => 'noon Minutes',
+        'store' => 'noon-minutes',
+        'type' => ProductSourceType::OnlineStore,
+        'status' => ProductSourceStatus::Active,
+        'search_url' => 'https://minutes.noon.com/egypt-en/search/?q=:search_term',
+        'extraction_strategy' => [
+            'list_container' => ['type' => 'selector', 'value' => "!div[class*='_wrapper_r4yxz']"],
+            'product_title' => ['type' => 'selector', 'value' => "[data-testid='product-title']"],
+            'product_url' => ['type' => 'selector', 'value' => "a[data-testid^='catalog-product-box-']|href", 'prepend' => 'https://minutes.noon.com'],
+            'product_price' => ['type' => 'selector', 'value' => "[data-testid='product-price'] [class*='sellingPrice'] strong"],
+        ],
+        'settings' => ['scraper_service' => ScraperService::Api->value],
+    ],
 ];

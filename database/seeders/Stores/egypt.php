@@ -88,7 +88,13 @@ return [
             ['domain' => 'jumia.com.eg'],
             ['domain' => 'www.jumia.com.eg'],
         ],
-        'scrape_strategy' => $schemaOrg,
+        // Only identified bots get through (BOT_CONTACT, config/scraper_bot.php). Its Schema.org
+        // data is inside an @graph list the reader doesn't open, so selectors are used.
+        'scrape_strategy' => [
+            'title' => ['type' => 'selector', 'value' => 'h1'],
+            'price' => ['type' => 'selector', 'value' => '.-fs24.-prxs'],
+            'image' => ['type' => 'selector', 'value' => 'meta[property="og:image"]|content'],
+        ],
         'settings' => $egp,
     ],
 
@@ -168,6 +174,31 @@ return [
         'domains' => [
             ['domain' => 'adidas.com.eg'],
             ['domain' => 'www.adidas.com.eg'],
+        ],
+        'scrape_strategy' => $schemaOrg,
+        'settings' => $browser,
+    ],
+
+    // Quick delivery. talabat mart's store page depends on the area: this is Mivida (aid=9289).
+    [
+        'name' => 'talabat mart',
+        'initials' => 'TM',
+        'slug' => 'talabat-mart',
+        'domains' => [
+            ['domain' => 'talabat.com'],
+            ['domain' => 'www.talabat.com'],
+        ],
+        'scrape_strategy' => $schemaOrg,
+        'settings' => $egp,
+    ],
+    // noon Minutes: the delivery area can't be kept without signing in, so prices are
+    // for noon's default Cairo area.
+    [
+        'name' => 'noon Minutes',
+        'initials' => 'NM',
+        'slug' => 'noon-minutes',
+        'domains' => [
+            ['domain' => 'minutes.noon.com'],
         ],
         'scrape_strategy' => $schemaOrg,
         'settings' => $browser,
