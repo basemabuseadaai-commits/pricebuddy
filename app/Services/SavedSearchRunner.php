@@ -222,6 +222,16 @@ class SavedSearchRunner
         $service = $source->getSearchService()->inCategory($search->category);
         $brand = $search->brand;
 
+        // A brand's own shop (settings.sole_brand, e.g. adidas): its titles never name the
+        // brand, so search without it, and skip the shop for any other brand.
+        $soleBrand = data_get($source->settings, 'sole_brand');
+        if (filled($soleBrand) && filled($brand)) {
+            if (! self::sameBrand($soleBrand, $brand)) {
+                return collect();
+            }
+            $brand = null;
+        }
+
         return collect($search->queries)
             ->filter()
             ->flatMap(function ($query) use ($brand, $service) {
@@ -241,6 +251,16 @@ class SavedSearchRunner
                 'url' => self::canonicalUrl((string) $r['url']),
             ]))
             ->values();
+    }
+
+    /**
+     * "Adidas" matches "adidas"; "LC Waikiki" matches "lcwaikiki" (case, spaces and dashes ignored).
+     */
+    public static function sameBrand(string $a, string $b): bool
+    {
+        $norm = fn (string $s) => preg_replace('/[^\p{L}\p{N}]+/u', '', Str::lower($s));
+
+        return $norm($a) !== '' && $norm($a) === $norm($b);
     }
 
     /**

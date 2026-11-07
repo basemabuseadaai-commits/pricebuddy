@@ -107,8 +107,16 @@ class ProductSourceSearchService
                     ? $this->extractValue($itemScraper, $strategy['product_price'], 'product_price')
                     : null;
 
+                $title = $this->extractValue($itemScraper, $strategy['product_title'], 'product_title');
+
+                // Optional extra text for filtering, e.g. adidas' "Kids 4-8 Years" line.
+                if (filled($title) && ! empty($strategy['product_title_suffix'])) {
+                    $suffix = trim((string) $this->extractValue($itemScraper, $strategy['product_title_suffix'], 'product_title_suffix'));
+                    $title = $suffix !== '' ? $title.' - '.$suffix : $title;
+                }
+
                 return [
-                    'title' => $this->extractValue($itemScraper, $strategy['product_title'], 'product_title'),
+                    'title' => $title,
                     'url' => $this->scrapeUrl($itemScraper, $strategy),
                     // Search pages show English-formatted prices ("1,299.00").
                     'price' => filled($price) ? CurrencyHelper::toFloat($price, 'en') : null,

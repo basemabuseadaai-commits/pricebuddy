@@ -139,7 +139,7 @@ return [
             // Shelf price. Some cards also show a lower "in basket" price in .price-in-cart.
             'product_price' => ['type' => 'selector', 'value' => '.current-price'],
         ],
-        'settings' => ['scraper_service' => ScraperService::Api->value],
+        'settings' => ['scraper_service' => ScraperService::Api->value, 'sole_brand' => 'LC Waikiki'],
     ],
     [
         'name' => 'DeFacto',
@@ -154,7 +154,7 @@ return [
             'product_url' => ['type' => 'selector', 'value' => 'a.product-card__title--name|href', 'prepend' => 'https://www.defacto.com.eg'],
             'product_price' => ['type' => 'selector', 'value' => '.base-price'],
         ],
-        'settings' => ['scraper_service' => ScraperService::Http->value],
+        'settings' => ['scraper_service' => ScraperService::Http->value, 'sole_brand' => 'DeFacto'],
     ],
     [
         'name' => 'American Eagle',
@@ -168,7 +168,7 @@ return [
             'product_url' => ['type' => 'selector', 'value' => 'a.product-item-title|href', 'prepend' => 'https://www.americaneagle.com.eg'],
             'product_price' => ['type' => 'selector', 'value' => '.item-price'],
         ],
-        'settings' => ['scraper_service' => ScraperService::Api->value],
+        'settings' => ['scraper_service' => ScraperService::Api->value, 'sole_brand' => 'American Eagle'],
     ],
     [
         'name' => 'Faces',
@@ -200,7 +200,7 @@ return [
             'product_url' => ['type' => 'selector', 'value' => 'a.plp-price-module__product-link|href'],
             'product_price' => ['type' => 'selector', 'value' => '.plp-price-module__current-price .plp-price__integer'],
         ],
-        'settings' => ['scraper_service' => ScraperService::Api->value],
+        'settings' => ['scraper_service' => ScraperService::Api->value, 'sole_brand' => 'IKEA'],
     ],
     [
         'name' => 'Raneen',
@@ -223,14 +223,17 @@ return [
         'type' => ProductSourceType::OnlineStore,
         'status' => ProductSourceStatus::Active,
         // Common searches redirect to a landing page (e.g. /en/black-sneakers); that is fine.
-        // Kids' and infants' items say so in the title, so exclude "kids, infants" if needed.
+        // Its own titles never say "adidas" (sole_brand), and the card's "Men Running" /
+        // "Kids 4-8 Years" line is added to the title so excludes like "kids, women" work.
         'search_url' => 'https://www.adidas.com.eg/en/search?q=:search_term',
         'extraction_strategy' => [
             'list_container' => ['type' => 'selector', 'value' => '!div.product-tile'],
             'product_title' => ['type' => 'selector', 'value' => '.pdp-link a'],
             'product_url' => ['type' => 'selector', 'value' => '.pdp-link a|href', 'prepend' => 'https://www.adidas.com.eg'],
             'product_price' => ['type' => 'selector', 'value' => '.price .sales .value'],
+            // Adds e.g. "Kids 4-8 Years Sportswear" or "Women Running" to the title for filtering.
+            'product_title_suffix' => ['type' => 'selector', 'value' => '.gender-division'],
         ],
-        'settings' => ['scraper_service' => ScraperService::Api->value],
+        'settings' => ['scraper_service' => ScraperService::Api->value, 'sole_brand' => 'adidas'],
     ],
 ];

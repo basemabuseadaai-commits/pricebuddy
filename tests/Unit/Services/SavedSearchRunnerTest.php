@@ -74,6 +74,13 @@ class SavedSearchRunnerTest extends TestCase
         $this->assertSame('https://www.noon.com/egypt-en/breakbase/Z724/p/?o=bbb', $picked->first()['url']);
     }
 
+    public function test_brand_names_compare_loosely()
+    {
+        $this->assertTrue(SavedSearchRunner::sameBrand('adidas', 'Adidas'));
+        $this->assertTrue(SavedSearchRunner::sameBrand('LC Waikiki', 'lcwaikiki'));
+        $this->assertFalse(SavedSearchRunner::sameBrand('adidas', 'Nike'));
+    }
+
     public function test_tracking_parameters_are_dropped()
     {
         $this->assertSame(
