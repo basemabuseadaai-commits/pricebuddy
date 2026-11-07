@@ -44,15 +44,32 @@ class ProductSourceSearchService
     }
 
     /**
-     * Whether this source can filter its search by brand (settings.brand_param).
+     * Whether this source can filter its search by brand: settings.brand_param
+     * (appended to the search URL) or settings.brand_search_url (a whole URL).
      */
     public function supportsBrandFilter(): bool
     {
-        return filled(data_get($this->source->settings, 'brand_param'));
+        $settings = $this->source->settings ?? [];
+
+        return filled(data_get($settings, 'brand_param')) || filled(data_get($settings, 'brand_search_url'));
     }
 
+    /**
+     * Search, optionally limited to one brand with the shop's own brand filter.
+     * Returns nothing when the shop doesn't know the brand.
+     */
     public function search(string $query, ?string $brand = null): Collection
     {
+        if (filled($brand) && $this->supportsBrandFilter()) {
+            $brand = $this->resolveBrand($query, $brand);
+
+            if ($brand === null) {
+                return collect();
+            }
+        } else {
+            $brand = null;
+        }
+
         $strategy = data_get($this->source, 'extraction_strategy', []);
         $items = $this->getList($query, $brand);
 
@@ -115,17 +132,108 @@ class ProductSourceSearchService
         return $this->scrapeOption($scraper, ($strategy['list_container']));
     }
 
+    /**
+     * @param  ?string  $brand  the shop's own brand value (see resolveBrand())
+     */
     public function buildSearchUrl(string $query, ?string $brand = null): string
     {
-        $url = str_replace(':search_term', urlencode($query), $this->source->search_url);
+        $settings = $this->source->settings ?? [];
+        $template = filled($brand) && filled(data_get($settings, 'brand_search_url'))
+            ? data_get($settings, 'brand_search_url')
+            : $this->source->search_url;
 
-        // settings.brand_param is appended with {brand} replaced, e.g. "&rh=p_89:{brand}".
-        $brandParam = data_get($this->source->settings, 'brand_param');
+        $url = str_replace(
+            [':search_term', '{brand}'],
+            [urlencode($query), rawurlencode((string) $brand)],
+            $template
+        );
+
+        // settings.brand_param is appended with {brand} replaced, e.g. "&rh=p_123:{brand}".
+        $brandParam = data_get($settings, 'brand_param');
         if (filled($brand) && filled($brandParam)) {
             $url .= str_replace('{brand}', rawurlencode($brand), $brandParam);
         }
 
         return $url;
+    }
+
+    /**
+     * Turn a brand name into the value the shop's filter expects.
+     *
+     * settings.brand_format "lower_underscore" gives "cuisine_art" for "Cuisine Art".
+     * settings.brand_lookup {pattern} is a regex run on the search page for
+     * "<brand> <query>"; its named groups `name` and optional `value` list the
+     * shop's brands, and the one whose name matches is used. Null = not found.
+     */
+    public function resolveBrand(string $query, string $brand): ?string
+    {
+        $settings = $this->source->settings ?? [];
+        $pattern = data_get($settings, 'brand_lookup.pattern');
+
+        if (blank($pattern)) {
+            return data_get($settings, 'brand_format') === 'lower_underscore'
+                ? str_replace(' ', '_', mb_strtolower(trim($brand)))
+                : trim($brand);
+        }
+
+        $cacheKey = 'product_source:brand:'.$this->source->getKey().':'.md5(mb_strtolower($brand).'|'.$pattern);
+
+        $value = cache()->get($cacheKey);
+        if ($value !== null) {
+            return $value === '' ? null : $value;
+        }
+
+        $html = (string) $this->makeScraper(trim($brand.' '.$query))->get()->getBody();
+        $value = self::matchBrand(self::brandOptions($html, $pattern), $brand);
+
+        // Remember misses briefly and hits for a week.
+        cache()->put($cacheKey, $value ?? '', $value === null ? now()->addHours(6) : now()->addDays(7));
+
+        return $value;
+    }
+
+    /**
+     * @return array<string, string> brand name => filter value
+     */
+    public static function brandOptions(string $html, string $pattern): array
+    {
+        if (@preg_match_all($pattern, $html, $matches, PREG_SET_ORDER) === false) {
+            return [];
+        }
+
+        $options = [];
+        foreach ($matches as $match) {
+            $name = trim(html_entity_decode((string) ($match['name'] ?? $match[1] ?? ''), ENT_QUOTES | ENT_HTML5));
+            if ($name !== '') {
+                $options[$name] ??= trim((string) ($match['value'] ?? $name));
+            }
+        }
+
+        return $options;
+    }
+
+    /**
+     * Exact name first (any case), then a name that starts with the brand.
+     *
+     * @param  array<string, string>  $options
+     */
+    public static function matchBrand(array $options, string $brand): ?string
+    {
+        $wanted = mb_strtolower(trim($brand));
+
+        foreach ($options as $name => $value) {
+            if (mb_strtolower($name) === $wanted) {
+                return $value;
+            }
+        }
+
+        foreach ($options as $name => $value) {
+            if (str_starts_with(mb_strtolower($name), $wanted)) {
+                return $value;
+            }
+        }
+
+        return null;
     }
 
     /**

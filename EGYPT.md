@@ -23,6 +23,19 @@ depends on the delivery area).
 results (set in Settings). noon and Carrefour pages are read with a browser, so a
 search takes 1 to 3 minutes.
 
+## Saved searches
+
+**Saved searches** (in the menu) track a search instead of fixed links. Type what you
+would put in a shop's search bar, add brands if you want, and optional title words
+(`granite|ceramic` means either) and price limits. Each brand becomes one product on the
+dashboard, grouped under a tag with the search's name. Every run (default every 2 hours)
+searches each shop again, adds the cheapest matching results to the product, and drops
+results that haven't shown up for 3 days.
+
+Brand filters use each shop's own filter: Amazon by brand id (looked up on the results
+page), noon by the brand in the address, Carrefour by its exact brand name. A shop that
+doesn't carry the brand returns nothing for it.
+
 ## Set up on Windows
 
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and open it.

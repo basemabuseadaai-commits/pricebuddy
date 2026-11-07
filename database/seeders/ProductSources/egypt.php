@@ -28,7 +28,15 @@ return [
             'product_url' => ['type' => 'selector', 'value' => 'a.a-link-normal[href*="/dp/"]|href', 'prepend' => 'https://www.amazon.eg'],
             'product_price' => ['type' => 'selector', 'value' => '.a-price > .a-offscreen'],
         ],
-        'settings' => ['scraper_service' => ScraperService::Http->value],
+        'settings' => [
+            'scraper_service' => ScraperService::Http->value,
+            // Brand filter by id; the id is read from the brand list on the results page.
+            // (p_89:<name> is silently ignored for some brands.)
+            'brand_param' => '&rh=p_123:{brand}',
+            'brand_lookup' => [
+                'pattern' => '~id="p_123/(?<value>\d+)".*?<span class="a-size-base[^"]*"[^>]*>(?<name>[^<]+)</span>~s',
+            ],
+        ],
     ],
     [
         // Blocked by a Cloudflare challenge for both scrapers (tested Nov 2026). Kept as Draft.
@@ -58,7 +66,12 @@ return [
             // The whole price box also holds the old price and the % off.
             'product_price' => ['type' => 'selector', 'value' => '[data-qa="plp-product-box-price"] [class*="sellingPrice"] strong'],
         ],
-        'settings' => ['scraper_service' => ScraperService::Api->value],
+        'settings' => [
+            'scraper_service' => ScraperService::Api->value,
+            // The brand is a path segment: lowercase, spaces as underscores.
+            'brand_search_url' => 'https://www.noon.com/egypt-en/{brand}/?q=:search_term',
+            'brand_format' => 'lower_underscore',
+        ],
     ],
     [
         'name' => 'Carrefour Egypt',
@@ -73,6 +86,14 @@ return [
             'product_url' => ['type' => 'selector', 'value' => 'a[href*="/p/"]|href', 'prepend' => 'https://www.carrefouregypt.com'],
             'product_price' => ['type' => 'selector', 'value' => 'div.items-baseline span:nth-child(2)'],
         ],
-        'settings' => ['scraper_service' => ScraperService::Api->value],
+        'settings' => [
+            'scraper_service' => ScraperService::Api->value,
+            // The brand must be spelled exactly as Carrefour does, so it is looked up
+            // in the filter list embedded in the results page.
+            'brand_param' => '&filter=brand_name%3A%27{brand}%27',
+            'brand_lookup' => [
+                'pattern' => '~\\\\?"code\\\\?":\\\\?"\'(?<name>[^\'"\\\\]+)\'~',
+            ],
+        ],
     ],
 ];
