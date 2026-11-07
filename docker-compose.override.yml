@@ -1,0 +1,13 @@
+# Egypt setup. Docker Compose loads this file automatically next to docker-compose.yml.
+# It mounts the Egyptian store files from this repository into the official image,
+# so no custom image build is needed yet.
+services:
+    app:
+        environment:
+            APP_CURRENCY_LOCALE: ar_EG   # default currency: EGP
+            APP_TIMEZONE: Africa/Cairo
+            AFFILIATE_ENABLED: 'false'   # don't rewrite shop links with affiliate codes
+        volumes:
+            - ./database/seeders/Stores/egypt.php:/app/database/seeders/Stores/egypt.php:ro
+            - ./database/seeders/ProductSources:/app/database/seeders/ProductSources:ro
+            - ./app/Console/Commands/CreateProductSources.php:/app/app/Console/Commands/CreateProductSources.php:ro
