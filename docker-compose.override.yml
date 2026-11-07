@@ -20,6 +20,7 @@ services:
             - ./app/Services/SearchService.php:/app/app/Services/SearchService.php:ro
             # Saved searches: searched again on a schedule, cheapest results tracked.
             - ./database/migrations/2026_11_07_000000_create_saved_searches_table.php:/app/database/migrations/2026_11_07_000000_create_saved_searches_table.php:ro
+            - ./database/migrations/2026_11_07_100000_add_category_to_saved_searches_table.php:/app/database/migrations/2026_11_07_100000_add_category_to_saved_searches_table.php:ro
             - ./app/Models/SavedSearch.php:/app/app/Models/SavedSearch.php:ro
             - ./app/Models/ProductSource.php:/app/app/Models/ProductSource.php:ro
             - ./app/Services/ProductSourceSearchService.php:/app/app/Services/ProductSourceSearchService.php:ro

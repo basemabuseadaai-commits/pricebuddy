@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property ?string $brand
  * @property ?array<int, string> $must_include
  * @property ?array<int, string> $exclude
+ * @property ?string $category  a key of self::CATEGORIES
  * @property ?float $min_price
  * @property ?float $max_price
  * @property int $per_shop
@@ -35,6 +36,18 @@ use Illuminate\Support\Carbon;
  */
 class SavedSearch extends Model
 {
+    /**
+     * Shop sections a search can be limited to. Shops list a search URL for each
+     * section they have in their settings.category_search_urls; others search
+     * the whole shop.
+     */
+    public const array CATEGORIES = [
+        'men_shoes' => "Men's shoes",
+        'men_sneakers' => "Men's sneakers",
+        'women_shoes' => "Women's shoes",
+        'women_sneakers' => "Women's sneakers",
+    ];
+
     protected $guarded = [];
 
     protected function casts(): array

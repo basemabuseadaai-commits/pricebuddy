@@ -33,9 +33,28 @@ class ProductSourceSearchService
         $this->logger = Log::channel('db')->withContext(['source' => $source->getKey()]);
     }
 
+    /** Shop section to search in, a key of settings.category_search_urls (see SavedSearch::CATEGORIES). */
+    protected ?string $category = null;
+
     public static function new(ProductSource $source): self
     {
         return resolve(static::class, ['source' => $source]);
+    }
+
+    /**
+     * Search inside one section of the shop, e.g. men's sneakers, when the shop
+     * has a URL for it in settings.category_search_urls. Null = whole shop.
+     */
+    public function inCategory(?string $category): self
+    {
+        $this->category = $this->supportsCategory($category) ? $category : null;
+
+        return $this;
+    }
+
+    public function supportsCategory(?string $category): bool
+    {
+        return filled($category) && filled(data_get($this->source->settings ?? [], 'category_search_urls.'.$category));
     }
 
     public function makeScraper(string $query, ?string $brand = null, bool $useCache = true): WebScraperInterface
@@ -147,6 +166,14 @@ class ProductSourceSearchService
         $template = filled($brand) && filled(data_get($settings, 'brand_search_url'))
             ? data_get($settings, 'brand_search_url')
             : $this->source->search_url;
+
+        // A section URL may hold {brand}/ as a path segment; it is dropped without a brand.
+        if ($this->category) {
+            $template = data_get($settings, 'category_search_urls.'.$this->category);
+            if (blank($brand)) {
+                $template = str_replace('{brand}/', '', $template);
+            }
+        }
 
         $url = str_replace(
             [':search_term', '{brand}'],

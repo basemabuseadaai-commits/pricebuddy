@@ -60,6 +60,12 @@ class SavedSearchResource extends Resource
                     Forms\Components\TagsInput::make('exclude')
                         ->label(__('Title must not include'))
                         ->placeholder('lid'),
+                    Forms\Components\Select::make('category')
+                        ->label(__('Shop section'))
+                        ->options(SavedSearch::CATEGORIES)
+                        ->placeholder(__('Whole shop'))
+                        ->helperText(__('Shops that have this section (noon) are searched inside it, and "Title must include" is not needed there. Other shops are searched as usual.'))
+                        ->columnSpanFull(),
                     Forms\Components\TextInput::make('min_price')
                         ->label(__('Min price'))
                         ->numeric(),

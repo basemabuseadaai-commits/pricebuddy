@@ -211,7 +211,7 @@ class SavedSearchRunner
      */
     protected function searchSource(SavedSearch $search, ProductSource $source): Collection
     {
-        $service = $source->getSearchService();
+        $service = $source->getSearchService()->inCategory($search->category);
         $brand = $search->brand;
 
         return collect($search->queries)
@@ -240,6 +240,12 @@ class SavedSearchRunner
      */
     protected function requiredWords(SavedSearch $search, ProductSource $source): array
     {
+        // Shops searched inside the chosen section (e.g. noon's men's sneakers) already
+        // return only that kind of item, and their titles often lack words like "shoe".
+        if ($search->category && $source->getSearchService()->supportsCategory($search->category)) {
+            return [];
+        }
+
         return $search->must_include ?? [];
     }
 

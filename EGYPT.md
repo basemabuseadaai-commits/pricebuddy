@@ -37,6 +37,10 @@ Brand filters use each shop's own filter: Amazon by brand id (looked up on the r
 page), noon by the brand in the address, Carrefour by its exact brand name. A shop that
 doesn't carry the brand returns nothing for it.
 
+**Shop section** limits a search to one section where a shop has it (noon: men's or
+women's shoes and sneakers). Those shops skip "Title must include", because their titles
+are often just model names ("Court Vision Lo"). Other shops are searched as usual.
+
 ## Set up on Windows
 
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and open it.

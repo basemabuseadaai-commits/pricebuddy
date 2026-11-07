@@ -113,8 +113,13 @@ return [
             ['domain' => 'hyperone.com.eg'],
             ['domain' => 'www.hyperone.com.eg'],
         ],
-        // Pages are built in the browser and fill in slowly. Product-page data not checked yet.
-        'scrape_strategy' => $schemaOrg,
+        // Pages are built in the browser and fill in slowly. Their Schema.org data has no
+        // price, so selectors are used (checked 2026-11-07).
+        'scrape_strategy' => [
+            'title' => ['type' => 'selector', 'value' => 'h1'],
+            'price' => ['type' => 'selector', 'value' => '.currency.highlight'],
+            'image' => ['type' => 'selector', 'value' => 'meta[property="og:image"]|content'],
+        ],
         'settings' => array_merge($browser, ['scraper_service_settings' => 'sleep=8000']),
     ],
 

@@ -74,6 +74,13 @@ return [
             // The brand is a path segment: lowercase, spaces as underscores.
             'brand_search_url' => 'https://www.noon.com/egypt-en/{brand}/?q=:search_term',
             'brand_format' => 'lower_underscore',
+            // Sections for saved searches (SavedSearch::CATEGORIES); {brand}/ is dropped without a brand.
+            'category_search_urls' => [
+                'men_shoes' => 'https://www.noon.com/egypt-en/fashion/men-31225/shoes-17421/{brand}/?q=:search_term',
+                'men_sneakers' => 'https://www.noon.com/egypt-en/fashion/men-31225/shoes-17421/fashion-sneakers-20082/{brand}/?q=:search_term',
+                'women_shoes' => 'https://www.noon.com/egypt-en/fashion/women-31229/shoes-16238/{brand}/?q=:search_term',
+                'women_sneakers' => 'https://www.noon.com/egypt-en/fashion/women-31229/shoes-16238/fashion-sneakers-24738/{brand}/?q=:search_term',
+            ],
         ],
     ],
     [
