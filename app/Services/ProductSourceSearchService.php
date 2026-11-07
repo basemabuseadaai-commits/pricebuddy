@@ -94,7 +94,7 @@ class ProductSourceSearchService
     public function search(string $query, ?string $brand = null): Collection
     {
         // Shops without a web search (talabat mart): browse their category pages.
-        if (filled(data_get($this->source->settings, 'browse.urls'))) {
+        if (filled(data_get($this->source->settings, 'browse.urls')) || filled(data_get($this->source->settings, 'browse.paths'))) {
             return $this->searchByBrowsing($query);
         }
 
@@ -160,7 +160,7 @@ class ProductSourceSearchService
         $browse = (array) data_get($this->source->settings, 'browse', []);
         $words = array_values(array_filter(preg_split('/\s+/u', Str::lower(trim($query)))));
 
-        return collect((array) ($browse['urls'] ?? []))
+        return collect(self::browseUrlsFor($browse, $words))
             ->flatMap(fn ($url) => $this->browseItems((string) $url, $browse))
             ->filter(function (array $item) use ($words) {
                 $title = Str::lower((string) $item['title']);
@@ -172,22 +172,86 @@ class ProductSourceSearchService
     }
 
     /**
+     * Pages to read for a search. settings.browse.urls are always read. With
+     * browse.base_url + browse.paths (e.g. "milk/fresh-milk"), only the paths that
+     * contain one of the search words are read, so "milk" reads the milk sections
+     * and not all 180 of them. browse.query is appended to each URL (e.g. "aid=9289").
+     *
+     * @param  array<int, string>  $words
+     * @return array<int, string>
+     */
+    public static function browseUrlsFor(array $browse, array $words): array
+    {
+        $urls = array_values((array) ($browse['urls'] ?? []));
+        $base = rtrim((string) ($browse['base_url'] ?? ''), '/');
+        $query = (string) ($browse['query'] ?? '');
+
+        foreach ((array) ($browse['paths'] ?? []) as $path) {
+            $path = trim((string) $path, '/');
+            $haystack = str_replace(['-', '_'], ' ', Str::lower($path));
+
+            $matches = collect($words)->contains(function ($word) use ($haystack) {
+                $stem = preg_replace('/(es|s)$/u', '', (string) $word);
+
+                return mb_strlen($stem) >= 3 && Str::contains($haystack, $stem);
+            });
+
+            if ($base !== '' && $matches) {
+                $urls[] = $base.'/'.$path.($query !== '' ? '?'.$query : '');
+            }
+        }
+
+        $max = (int) ($browse['max_sections'] ?? 12);
+
+        return array_slice(array_values(array_unique($urls)), 0, max(1, $max));
+    }
+
+    /**
+     * Items from one category page, following its pages up to browse.max_pages
+     * (the page count is read from browse.page_count_path).
+     *
      * @return array<int, array{title: string, url: string, price: ?float}>
      */
     public function browseItems(string $url, array $browse): array
     {
-        $scraper = WebScraper::make($this->source->scraper_service);
-        if (filled($cookies = $this->source->store?->cookies)) {
-            $scraper->setCookies($cookies);
+        $items = [];
+        $maxPages = max(1, (int) ($browse['max_pages'] ?? 1));
+
+        for ($page = 1; $page <= $maxPages; $page++) {
+            $pageUrl = $page === 1 ? $url : $url.(str_contains($url, '?') ? '&' : '?').'page='.$page;
+
+            $scraper = WebScraper::make($this->source->scraper_service);
+            if (filled($cookies = $this->source->store?->cookies)) {
+                $scraper->setCookies($cookies);
+            }
+
+            $html = (string) $scraper->from($pageUrl)
+                ->setCacheMinsTtl(AppSettings::new()->scrape_cache_ttl)
+                ->setOptions((array) data_get($this->source->settings, 'scraper_options', []))
+                ->get()
+                ->getBody();
+
+            $items = array_merge($items, self::itemsFromEmbeddedJson($html, $browse));
+
+            $pageCount = (int) data_get(self::embeddedJson($html, $browse), (string) ($browse['page_count_path'] ?? ''), 1);
+            if ($page >= $pageCount) {
+                break;
+            }
         }
 
-        $html = $scraper->from($url)
-            ->setCacheMinsTtl(AppSettings::new()->scrape_cache_ttl)
-            ->setOptions((array) data_get($this->source->settings, 'scraper_options', []))
-            ->get()
-            ->getBody();
+        return $items;
+    }
 
-        return self::itemsFromEmbeddedJson((string) $html, $browse);
+    public static function embeddedJson(string $html, array $browse): ?array
+    {
+        $id = preg_quote((string) ($browse['script_id'] ?? '__NEXT_DATA__'), '~');
+        if (! preg_match('~<script[^>]*id=["\']'.$id.'["\'][^>]*>(.*?)</script>~s', $html, $m)) {
+            return null;
+        }
+
+        $json = json_decode(html_entity_decode($m[1], ENT_QUOTES | ENT_HTML5), true);
+
+        return is_array($json) ? $json : null;
     }
 
     /**
@@ -195,12 +259,11 @@ class ProductSourceSearchService
      */
     public static function itemsFromEmbeddedJson(string $html, array $browse): array
     {
-        $id = preg_quote((string) ($browse['script_id'] ?? '__NEXT_DATA__'), '~');
-        if (! preg_match('~<script[^>]*id=["\']'.$id.'["\'][^>]*>(.*?)</script>~s', $html, $m)) {
+        $json = self::embeddedJson($html, $browse);
+        if ($json === null) {
             return [];
         }
 
-        $json = json_decode(html_entity_decode($m[1], ENT_QUOTES | ENT_HTML5), true);
         $items = data_get($json, (string) ($browse['items_path'] ?? ''), []);
 
         return collect(is_array($items) ? $items : [])

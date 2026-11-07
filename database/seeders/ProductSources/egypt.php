@@ -260,11 +260,13 @@ return [
                 'title' => 'title',
                 'price' => 'price',
                 'url_template' => 'https://www.talabat.com/egypt/grocery/745090/tmart-tagammoa-5-emaar-mivida/product/{slug}/s/{sku}?aid=9289',
-                'urls' => [
-                    'https://www.talabat.com/egypt/grocery/745090/tmart-tagammoa-5-emaar-mivida/milk/fresh-milk?aid=9289',
-                    'https://www.talabat.com/egypt/grocery/745090/tmart-tagammoa-5-emaar-mivida/fruit-veg/best-in-season?aid=9289',
-                    'https://www.talabat.com/egypt/grocery/745090/tmart-tagammoa-5-emaar-mivida/poultry-meat-seafood/chicken-poultry?aid=9289',
-                ],
+                'page_count_path' => 'props.pageProps.initialState.itemsData.pageCount',
+                'max_pages' => 3,
+                // Only sections whose path contains a search word are read (at most 12).
+                'base_url' => 'https://www.talabat.com/egypt/grocery/745090/tmart-tagammoa-5-emaar-mivida',
+                'query' => 'aid=9289',
+                'max_sections' => 12,
+                'paths' => require __DIR__.'/talabat-mart-sections.php',
             ],
         ],
     ],

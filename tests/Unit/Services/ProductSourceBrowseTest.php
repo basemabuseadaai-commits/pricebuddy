@@ -26,4 +26,20 @@ class ProductSourceBrowseTest extends TestCase
             'price' => 58.3,
         ]], $items);
     }
+
+    public function test_only_sections_matching_a_search_word_are_read()
+    {
+        $urls = ProductSourceSearchService::browseUrlsFor([
+            'base_url' => 'https://t.eg/store',
+            'query' => 'aid=1',
+            'paths' => ['milk/fresh-milk', 'bakery/eggs', 'poultry-meat-seafood/chicken-poultry'],
+        ], ['almarai', 'milk']);
+
+        $this->assertSame(['https://t.eg/store/milk/fresh-milk?aid=1'], $urls);
+
+        $this->assertSame(
+            ['https://t.eg/store/bakery/eggs?aid=1'],
+            ProductSourceSearchService::browseUrlsFor(['base_url' => 'https://t.eg/store', 'query' => 'aid=1', 'paths' => ['bakery/eggs']], ['eggs'])
+        );
+    }
 }
