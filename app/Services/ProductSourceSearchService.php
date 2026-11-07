@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Dto\StandardStrategyDto;
 use App\Models\ProductSource;
+use App\Services\Helpers\CurrencyHelper;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Jez500\WebScraperForLaravel\Exceptions\DomSelectorException;
@@ -36,25 +37,39 @@ class ProductSourceSearchService
         return resolve(static::class, ['source' => $source]);
     }
 
-    public function makeScraper(string $query): WebScraperInterface
+    public function makeScraper(string $query, ?string $brand = null): WebScraperInterface
     {
         return WebScraper::make($this->source->scraper_service)
-            ->from($this->buildSearchUrl($query));
+            ->from($this->buildSearchUrl($query, $brand));
     }
 
-    public function search(string $query): Collection
+    /**
+     * Whether this source can filter its search by brand (settings.brand_param).
+     */
+    public function supportsBrandFilter(): bool
+    {
+        return filled(data_get($this->source->settings, 'brand_param'));
+    }
+
+    public function search(string $query, ?string $brand = null): Collection
     {
         $strategy = data_get($this->source, 'extraction_strategy', []);
-        $items = $this->getList($query);
+        $items = $this->getList($query, $brand);
 
         try {
             // For each result, instantiate a new scraper and extract the title and url.
             return $items->map(function ($item) use ($strategy) {
                 $itemScraper = WebScraper::http()->setBody($item);
 
+                $price = ! empty($strategy['product_price'])
+                    ? $this->extractValue($itemScraper, $strategy['product_price'], 'product_price')
+                    : null;
+
                 return [
                     'title' => $this->extractValue($itemScraper, $strategy['product_title'], 'product_title'),
                     'url' => $this->scrapeUrl($itemScraper, $strategy),
+                    // Search pages show English-formatted prices ("1,299.00").
+                    'price' => filled($price) ? CurrencyHelper::toFloat($price, 'en') : null,
                     'content' => $item,
                 ];
             })
@@ -82,11 +97,11 @@ class ProductSourceSearchService
         return $this->htmlMemoryCache;
     }
 
-    public function getList(string $query): Collection
+    public function getList(string $query, ?string $brand = null): Collection
     {
         $strategy = data_get($this->source, 'extraction_strategy', []);
 
-        $scraper = $this->makeScraper($query)->get();
+        $scraper = $this->makeScraper($query, $brand)->get();
 
         if ($errors = $scraper->getErrors()) {
             $this->errorLog('Error scraping Product Source search result page', [
@@ -100,9 +115,17 @@ class ProductSourceSearchService
         return $this->scrapeOption($scraper, ($strategy['list_container']));
     }
 
-    public function buildSearchUrl(string $query): string
+    public function buildSearchUrl(string $query, ?string $brand = null): string
     {
-        return str_replace(':search_term', urlencode($query), $this->source->search_url);
+        $url = str_replace(':search_term', urlencode($query), $this->source->search_url);
+
+        // settings.brand_param is appended with {brand} replaced, e.g. "&rh=p_89:{brand}".
+        $brandParam = data_get($this->source->settings, 'brand_param');
+        if (filled($brand) && filled($brandParam)) {
+            $url .= str_replace('{brand}', rawurlencode($brand), $brandParam);
+        }
+
+        return $url;
     }
 
     /**

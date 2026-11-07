@@ -14,3 +14,14 @@ services:
             - ./app/Console/Commands/CreateProductSources.php:/app/app/Console/Commands/CreateProductSources.php:ro
             # Mixes results from every shop in "Search via the web" (see EGYPT.md).
             - ./app/Services/SearchService.php:/app/app/Services/SearchService.php:ro
+            # Saved searches: searched again on a schedule, cheapest results tracked.
+            - ./database/migrations/2026_11_07_000000_create_saved_searches_table.php:/app/database/migrations/2026_11_07_000000_create_saved_searches_table.php:ro
+            - ./app/Models/SavedSearch.php:/app/app/Models/SavedSearch.php:ro
+            - ./app/Models/ProductSource.php:/app/app/Models/ProductSource.php:ro
+            - ./app/Services/ProductSourceSearchService.php:/app/app/Services/ProductSourceSearchService.php:ro
+            - ./app/Services/SavedSearchRunner.php:/app/app/Services/SavedSearchRunner.php:ro
+            - ./app/Services/Helpers/ScheduleHelper.php:/app/app/Services/Helpers/ScheduleHelper.php:ro
+            - ./app/Jobs/RunSavedSearchJob.php:/app/app/Jobs/RunSavedSearchJob.php:ro
+            - ./app/Console/Commands/RunSavedSearches.php:/app/app/Console/Commands/RunSavedSearches.php:ro
+            - ./app/Filament/Resources/SavedSearchResource.php:/app/app/Filament/Resources/SavedSearchResource.php:ro
+            - ./app/Filament/Resources/SavedSearchResource:/app/app/Filament/Resources/SavedSearchResource:ro

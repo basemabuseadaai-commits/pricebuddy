@@ -117,9 +117,9 @@ class ProductSource extends Model
         return ProductSourceSearchService::new($this);
     }
 
-    public function search(string $query): Collection
+    public function search(string $query, ?string $brand = null): Collection
     {
-        return $this->getSearchService()->search($query);
+        return $this->getSearchService()->search($query, $brand);
     }
 
     public function searchDebugData(string $query, int $itemsCount = 5): array
