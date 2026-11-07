@@ -52,4 +52,12 @@ class SavedSearchRunnerTest extends TestCase
             SavedSearchRunner::canonicalUrl('https://www.noon.com/egypt-en/x/p/?o=abc')
         );
     }
+
+    public function test_words_match_whole_words_and_plurals()
+    {
+        $this->assertFalse(SavedSearchRunner::hasWord('Braided rug', 'bra'));
+        $this->assertFalse(SavedSearchRunner::hasWord('Stop sign', 'top'));
+        $this->assertTrue(SavedSearchRunner::hasWord('Dri-FIT Pacer Top', 'top'));
+        $this->assertTrue(SavedSearchRunner::hasWord('Nike sneakers', 'sneaker'));
+    }
 }

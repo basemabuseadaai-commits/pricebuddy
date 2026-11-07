@@ -100,14 +100,14 @@ class SavedSearchRunner
             $price = $result['price'] ?? null;
 
             foreach ($required as $word) {
-                $options = array_filter(array_map('trim', explode('|', Str::lower($word))));
-                if (! collect($options)->contains(fn ($option) => str_contains($title, $option))) {
+                $options = array_filter(array_map('trim', explode('|', $word)));
+                if (! collect($options)->contains(fn ($option) => self::hasWord($title, $option))) {
                     return false;
                 }
             }
 
             foreach ($exclude as $word) {
-                if (str_contains($title, Str::lower($word))) {
+                if (self::hasWord($title, $word)) {
                     return false;
                 }
             }
@@ -118,6 +118,18 @@ class SavedSearchRunner
 
             return ! ($price !== null && $max !== null && $price > $max);
         })->values();
+    }
+
+    /**
+     * Whole words only, plurals allowed: "bra" doesn't match "braided", "top" doesn't
+     * match "stop", and "sneaker" matches "sneakers".
+     */
+    public static function hasWord(string $title, string $word): bool
+    {
+        $word = trim(Str::lower($word));
+
+        return $word !== ''
+            && preg_match('/(?<![\\p{L}\\p{N}])'.preg_quote($word, '/').'(?:s|es)?(?![\\p{L}\\p{N}])/u', Str::lower($title)) === 1;
     }
 
     /**
