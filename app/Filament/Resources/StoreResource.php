@@ -330,6 +330,8 @@ class StoreResource extends Resource
         return BulkAction::make('setLocale')
             ->label('Set locale and currency')
             ->icon('heroicon-o-currency-dollar')
+            // Store settings are shared, so only an admin can change them (StorePolicy).
+            ->visible(fn (): bool => (bool) auth()->user()?->can('create', Store::class))
             ->modalDescription('The locale controls how prices are read from the page. The currency is used to display prices, including prices that are already saved. Saved prices keep their numbers and are not converted.')
             ->form(AppSettingsPage::getLocaleFormFields('locale_settings'))
             ->action(function (Collection $records, array $data): void {

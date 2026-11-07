@@ -56,7 +56,8 @@ are often just model names ("Court Vision Lo"). Other shops are searched as usua
 - **Sign-up** is off. Set `ALLOW_REGISTRATION=true` in `.env` and recreate the app to show a
   "Sign up" link. New accounts are normal users with their own copy of the shop searches;
   an admin can also create accounts under Users.
-- Each account only sees its own products and saved searches.
+- Each account only sees its own products and saved searches. Shops (Stores) are shared:
+  everyone can see the list, but only an admin can add or change a shop's settings.
 
 ## Set up on Windows
 

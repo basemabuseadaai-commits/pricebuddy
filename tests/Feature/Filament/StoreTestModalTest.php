@@ -35,7 +35,8 @@ class StoreTestModalTest extends TestCase
 
         User::query()->delete();
 
-        $this->user = User::factory()->create([
+        // Only an admin can create or edit a store.
+        $this->user = User::factory()->admin()->create([
             'name' => 'Tester',
             'email' => 'tester@test.com',
             'password' => Hash::make('password'),

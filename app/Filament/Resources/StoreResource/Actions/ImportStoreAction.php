@@ -5,6 +5,7 @@ namespace App\Filament\Resources\StoreResource\Actions;
 use App\Actions\CreateStoreAction;
 use App\Enums\Icons;
 use App\Filament\Resources\StoreResource;
+use App\Models\Store;
 use App\Rules\ImportStore;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
@@ -22,6 +23,9 @@ class ImportStoreAction extends Action
         parent::setUp();
 
         $this->label(__('Import'));
+
+        // Importing creates a shared store, so it follows the same rule as Create.
+        $this->visible(fn (): bool => (bool) auth()->user()?->can('create', Store::class));
 
         $this->successNotificationTitle(__('Store created'));
 

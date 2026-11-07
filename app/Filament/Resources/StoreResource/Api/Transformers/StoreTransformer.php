@@ -29,6 +29,11 @@ class StoreTransformer extends JsonResource
     {
         $data = $this->resource->toArray();
 
+        // Store cookies can hold a shop sign-in, so only an admin gets them back.
+        if (! $request?->user()?->isAdmin()) {
+            unset($data['cookies']);
+        }
+
         // Resolved accessor values (ISO 4217 code + BCP-47 tag) rather than the raw
         // `settings.locale_settings` blob, which is absent on most stores. Both accessors read
         // from `settings`, so PaginationHandler forces that column into any sparse-fieldset

@@ -8,6 +8,7 @@ use App\Filament\Resources\StoreResource\Api\Requests\CreateStoreRequest;
 use App\Filament\Resources\StoreResource\Api\Transformers\StoreTransformer;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 use Rupadana\ApiService\Http\Handlers;
 
 #[Group(StoreResource::API_GROUP)]
@@ -34,6 +35,10 @@ class CreateHandler extends Handlers
      */
     public function handler(CreateStoreRequest $request)
     {
+        if (Gate::denies('create', static::getModel())) {
+            return response()->json(['message' => 'Only an admin can create a store.'], 403);
+        }
+
         $values = $request->all();
         // user_id records who created the store. A client cannot set it.
         $values['user_id'] = auth()->id();
