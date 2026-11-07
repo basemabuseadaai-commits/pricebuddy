@@ -9,6 +9,9 @@ services:
             APP_TIMEZONE: Africa/Cairo
             AFFILIATE_ENABLED: 'false'   # don't rewrite shop links with affiliate codes
             DEFAULT_STORES_COUNTRY: egypt  # a fresh install only creates the Egyptian shops
+            # Contact sent to shops that only allow identified bots (Jumia). Set BOT_CONTACT
+            # in the .env file next to this one; it is not stored in the repository.
+            BOT_CONTACT: ${BOT_CONTACT:-}
         volumes:
             - ./database/seeders/Stores/egypt.php:/app/database/seeders/Stores/egypt.php:ro
             - ./database/seeders/ProductSources:/app/database/seeders/ProductSources:ro
@@ -30,5 +33,8 @@ services:
             - ./app/Filament/Resources/ProductResource.php:/app/app/Filament/Resources/ProductResource.php:ro
             - ./app/Filament/Resources/ProductResource/Pages/ListProducts.php:/app/app/Filament/Resources/ProductResource/Pages/ListProducts.php:ro
             - ./app/Filament/Resources/ProductResource/Widgets/CreateViaSearchForm.php:/app/app/Filament/Resources/ProductResource/Widgets/CreateViaSearchForm.php:ro
+            # Identified bot for Jumia (config/scraper_bot.php).
+            - ./config/scraper_bot.php:/app/config/scraper_bot.php:ro
+            - ./app/Services/Scrapers/Utf8WebScraperHttp.php:/app/app/Services/Scrapers/Utf8WebScraperHttp.php:ro
             # App name in the logo.
             - ./resources/views/filament/logo.blade.php:/app/resources/views/filament/logo.blade.php:ro

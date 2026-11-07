@@ -40,7 +40,9 @@ return [
         ],
     ],
     [
-        // Blocked by a Cloudflare challenge for both scrapers (tested Nov 2026). Kept as Draft.
+        // Blocks browser-like scrapers with a Cloudflare challenge. Its robots.txt allows bots
+        // that identify themselves with a contact, so set BOT_CONTACT (config/scraper_bot.php)
+        // and keep the http scraper. Draft until that has been checked.
         'name' => 'Jumia Egypt',
         'store' => 'jumia-eg',
         'type' => ProductSourceType::OnlineStore,
@@ -49,7 +51,7 @@ return [
         'extraction_strategy' => [
             'list_container' => ['type' => 'selector', 'value' => '!article.prd'],
             'product_title' => ['type' => 'selector', 'value' => '.name'],
-            'product_url' => ['type' => 'selector', 'value' => 'a.core|href'],
+            'product_url' => ['type' => 'selector', 'value' => 'a.core|href', 'prepend' => 'https://www.jumia.com.eg'],
             'product_price' => ['type' => 'selector', 'value' => '.prc'],
         ],
         'settings' => ['scraper_service' => ScraperService::Http->value],
