@@ -13,6 +13,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Throwable;
 
 class SearchService
@@ -124,7 +125,8 @@ class SearchService
 
     public function getMaxPages(): int
     {
-        return data_get(self::getSettings(), 'max_pages', self::DEFAULT_MAX_PAGES);
+        // The setting can be saved empty (null), which data_get() returns as-is.
+        return max(1, (int) (data_get(self::getSettings(), 'max_pages') ?? self::DEFAULT_MAX_PAGES));
     }
 
     public function getMaxPricedResults(): int
@@ -151,7 +153,11 @@ class SearchService
         $sources->each(function ($source) use (&$perSource) {
             /** @var ProductSource $source */
             try {
-                $results = $source->search($this->searchQuery);
+                // Shop searches can return loosely related items (a fashion shop
+                // answering "granite cookware" with a baby bib), so keep only
+                // titles that share enough words with the search.
+                $results = $source->search($this->searchQuery)
+                    ->filter(fn ($result) => self::isRelevant((string) data_get($result, 'title', ''), (string) $this->searchQuery));
                 $this->log(__('Found :count results via :source', ['count' => $results->count(), 'source' => $source->name]));
                 $perSource[] = $results->values()->all();
             } catch (Throwable $e) {
@@ -298,6 +304,40 @@ class SearchService
         })->values();
 
         return $this;
+    }
+
+    /**
+     * Drop results that share too few words with the search, so a search for
+     * "granite cookware" doesn't list a baby bib or a perfume from a fashion
+     * shop. At least half of the search's words (whole words, plurals
+     * allowed) must be in the title. Results without a title are kept. Used
+     * for shop searches only; general web results are left as they were.
+     */
+    public static function isRelevant(string $title, string $query): bool
+    {
+        $stop = ['a', 'an', 'and', 'the', 'for', 'of', 'with', 'in', 'on', 'to', 'by', 'or'];
+
+        $words = collect(preg_split('/[^\p{L}\p{N}]+/u', Str::lower($query)) ?: [])
+            ->filter(fn ($word) => mb_strlen($word) > 1 && ! in_array($word, $stop, true))
+            ->unique()
+            ->values();
+
+        if (trim($title) === '' || $words->isEmpty()) {
+            return true;
+        }
+
+        // "air pods" finds "AirPods".
+        if (str_contains(preg_replace('/\s+/u', '', Str::lower($title)), $words->implode(''))) {
+            return true;
+        }
+
+        // "shoes" should also find "shoe", as "shoe" already finds "shoes".
+        $found = $words->filter(fn ($word) => SavedSearchRunner::hasWord($title, $word)
+            || (str_ends_with($word, 'es') && SavedSearchRunner::hasWord($title, substr($word, 0, -2)))
+            || (str_ends_with($word, 's') && ! str_ends_with($word, 'ss') && SavedSearchRunner::hasWord($title, substr($word, 0, -1)))
+        )->count();
+
+        return $found >= (int) ceil($words->count() / 2);
     }
 
     public function normalizeStructure(): self
