@@ -159,6 +159,20 @@ return [
         'settings' => $browser,
     ],
 
+    // Sportswear brand store. Plain requests get 403; product pages carry Schema.org data
+    // (title, price, stock, image), checked 2026-11-07.
+    [
+        'name' => 'adidas EG',
+        'initials' => 'AD',
+        'slug' => 'adidas-eg',
+        'domains' => [
+            ['domain' => 'adidas.com.eg'],
+            ['domain' => 'www.adidas.com.eg'],
+        ],
+        'scrape_strategy' => $schemaOrg,
+        'settings' => $browser,
+    ],
+
     // Beauty. Product pages carry Schema.org Product data and load with plain requests.
     [
         'name' => 'Faces EG',

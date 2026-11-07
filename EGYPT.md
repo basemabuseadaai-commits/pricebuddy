@@ -12,7 +12,8 @@ This fork adds Egyptian shops, their search pages and EGP prices to PriceBuddy.
 | Jumia EG | Identified bot only: set `BOT_CONTACT` in `.env` (see `config/scraper_bot.php`) | Draft until checked |
 | DeFacto, Faces | Added, not tested yet | Works (DeFacto titles are Arabic) |
 | LC Waikiki, American Eagle, IKEA EG, Raneen | Added, not tested yet | Works (browser scraper) |
-| Hyper One | Added, not tested yet | Works (browser scraper, waits 8 s for products) |
+| Hyper One | Works (selectors; browser scraper, waits 8 s) | Works (browser scraper, waits 8 s for products) |
+| adidas EG | Works (browser scraper) | Works (browser scraper) |
 
 Tested from an Egyptian home connection in November 2026.
 

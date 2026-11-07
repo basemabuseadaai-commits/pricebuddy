@@ -216,4 +216,21 @@ return [
         ],
         'settings' => ['scraper_service' => ScraperService::Api->value],
     ],
+
+    [
+        'name' => 'adidas Egypt',
+        'store' => 'adidas-eg',
+        'type' => ProductSourceType::OnlineStore,
+        'status' => ProductSourceStatus::Active,
+        // Common searches redirect to a landing page (e.g. /en/black-sneakers); that is fine.
+        // Kids' and infants' items say so in the title, so exclude "kids, infants" if needed.
+        'search_url' => 'https://www.adidas.com.eg/en/search?q=:search_term',
+        'extraction_strategy' => [
+            'list_container' => ['type' => 'selector', 'value' => '!div.product-tile'],
+            'product_title' => ['type' => 'selector', 'value' => '.pdp-link a'],
+            'product_url' => ['type' => 'selector', 'value' => '.pdp-link a|href', 'prepend' => 'https://www.adidas.com.eg'],
+            'product_price' => ['type' => 'selector', 'value' => '.price .sales .value'],
+        ],
+        'settings' => ['scraper_service' => ScraperService::Api->value],
+    ],
 ];
