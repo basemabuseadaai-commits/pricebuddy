@@ -139,7 +139,9 @@ return [
             // Shelf price. Some cards also show a lower "in basket" price in .price-in-cart.
             // The price in basket (applied automatically, no code) when there is one,
             // otherwise the list price. Their schema.org offer uses the same number.
-            'product_price' => ['type' => 'selector', 'value' => '.price-in-cart, .current-price:not(.current-price--has-basket)'],
+            // The list price only matches when its class is exactly "current-price"
+            // (no basket deal). No parentheses: the selector escaping breaks :not().
+            'product_price' => ['type' => 'selector', 'value' => ".price-in-cart, span[class='current-price']"],
         ],
         'settings' => ['scraper_service' => ScraperService::Api->value, 'sole_brand' => 'LC Waikiki'],
     ],
