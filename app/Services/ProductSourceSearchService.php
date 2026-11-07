@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Dto\StandardStrategyDto;
 use App\Models\ProductSource;
 use App\Services\Helpers\CurrencyHelper;
+use App\Settings\AppSettings;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Jez500\WebScraperForLaravel\Exceptions\DomSelectorException;
@@ -37,10 +38,13 @@ class ProductSourceSearchService
         return resolve(static::class, ['source' => $source]);
     }
 
-    public function makeScraper(string $query, ?string $brand = null): WebScraperInterface
+    public function makeScraper(string $query, ?string $brand = null, bool $useCache = true): WebScraperInterface
     {
         return WebScraper::make($this->source->scraper_service)
-            ->from($this->buildSearchUrl($query, $brand));
+            ->from($this->buildSearchUrl($query, $brand))
+            // Same page cache time as product pages (Settings > Scrape cache ttl).
+            ->setCacheMinsTtl(AppSettings::new()->scrape_cache_ttl)
+            ->setUseCache($useCache);
     }
 
     /**
@@ -183,11 +187,17 @@ class ProductSourceSearchService
             return $value === '' ? null : $value;
         }
 
-        $html = (string) $this->makeScraper(trim($brand.' '.$query))->get()->getBody();
-        $value = self::matchBrand(self::brandOptions($html, $pattern), $brand);
+        $html = (string) $this->makeScraper(trim($brand.' '.$query), useCache: false)->get()->getBody();
+        $options = self::brandOptions($html, $pattern);
+        $value = self::matchBrand($options, $brand);
 
-        // Remember misses briefly and hits for a week.
-        cache()->put($cacheKey, $value ?? '', $value === null ? now()->addHours(6) : now()->addDays(7));
+        if ($value !== null) {
+            cache()->put($cacheKey, $value, now()->addDays(7));
+        } elseif ($options !== []) {
+            // The page listed brands, just not this one. A page without a brand
+            // list (blocked, captcha) is not remembered, so the next run retries.
+            cache()->put($cacheKey, '', now()->addHours(6));
+        }
 
         return $value;
     }

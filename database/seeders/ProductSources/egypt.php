@@ -84,7 +84,7 @@ return [
             'list_container' => ['type' => 'selector', 'value' => '!div.group.rounded-lg.border'],
             'product_title' => ['type' => 'selector', 'value' => 'span.line-clamp-2'],
             'product_url' => ['type' => 'selector', 'value' => 'a[href*="/p/"]|href', 'prepend' => 'https://www.carrefouregypt.com'],
-            'product_price' => ['type' => 'selector', 'value' => 'div.items-baseline span:nth-child(2)'],
+            'product_price' => ['type' => 'selector', 'value' => 'div.items-baseline span + span'], // :nth-child() isn't supported
         ],
         'settings' => [
             'scraper_service' => ScraperService::Api->value,

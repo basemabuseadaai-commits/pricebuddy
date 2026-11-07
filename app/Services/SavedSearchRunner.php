@@ -157,33 +157,33 @@ class SavedSearchRunner
     protected function searchSource(SavedSearch $search, ProductSource $source): Collection
     {
         $service = $source->getSearchService();
-        $useBrandFilter = $search->brand && $service->supportsBrandFilter();
+        $brand = $search->brand;
 
         return collect($search->queries)
             ->filter()
-            ->flatMap(function ($query) use ($search, $service, $useBrandFilter) {
-                $text = $search->brand && ! $useBrandFilter ? $search->brand.' '.$query : $query;
+            ->flatMap(function ($query) use ($brand, $service) {
+                // The shop's own brand filter, when it has one and knows the brand.
+                if ($brand && $service->supportsBrandFilter() && $service->resolveBrand($query, $brand) !== null) {
+                    return $service->search($query, $brand)->all();
+                }
 
-                return $service->search($text, $useBrandFilter ? $search->brand : null)->all();
+                $results = $service->search($brand ? $brand.' '.$query : $query);
+
+                // Otherwise the brand goes in the search text and must be in the title.
+                return $brand
+                    ? self::filterResults($results, [$brand], [], null, null)->all()
+                    : $results->all();
             })
             ->map(fn ($r) => array_merge(['price' => null], Arr::except($r, ['content'])))
             ->values();
     }
 
     /**
-     * Without the shop's own brand filter, the brand must be in the title.
-     *
      * @return array<int, string>
      */
     protected function requiredWords(SavedSearch $search, ProductSource $source): array
     {
-        $words = $search->must_include ?? [];
-
-        if ($search->brand && ! $source->getSearchService()->supportsBrandFilter()) {
-            $words[] = $search->brand;
-        }
-
-        return $words;
+        return $search->must_include ?? [];
     }
 
     public function ensureProduct(SavedSearch $search): Product
