@@ -152,8 +152,9 @@ class SavedSearchRunner
     public static function cheapest(Collection $results, int $count): Collection
     {
         return $results
-            ->unique('url')
             ->sortBy(fn ($r) => $r['price'] ?? PHP_FLOAT_MAX)
+            // Same product listed twice (e.g. two noon seller offers): keep the cheaper one.
+            ->unique(fn ($r) => self::matchKey((string) $r['url']))
             ->take(max(1, $count))
             ->values();
     }
@@ -187,7 +188,14 @@ class SavedSearchRunner
      */
     public static function matchKey(string $url): string
     {
-        return Url::normalizeForMatch(self::canonicalUrl($url));
+        $url = self::canonicalUrl($url);
+
+        // noon links name the seller offer in ?o=...; the product is the same.
+        if (preg_match('~^https?://(?:www\.)?noon\.com/~i', $url)) {
+            $url = preg_replace('~\?.*$~', '', $url);
+        }
+
+        return Url::normalizeForMatch($url);
     }
 
     /**

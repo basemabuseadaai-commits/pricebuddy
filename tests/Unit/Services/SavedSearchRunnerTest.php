@@ -60,6 +60,20 @@ class SavedSearchRunnerTest extends TestCase
         );
     }
 
+    public function test_noon_seller_offers_of_one_product_count_once()
+    {
+        $results = collect([
+            ['title' => 'Breakbase', 'url' => 'https://www.noon.com/egypt-en/breakbase/Z724/p/?o=aaa', 'price' => 1900.0],
+            ['title' => 'Breakbase', 'url' => 'https://www.noon.com/egypt-en/breakbase/Z724/p/?o=bbb', 'price' => 1863.0],
+            ['title' => 'Other', 'url' => 'https://www.noon.com/egypt-en/other/Z13D/p/?o=ccc', 'price' => 1863.0],
+        ]);
+
+        $picked = SavedSearchRunner::cheapest($results, 3);
+
+        $this->assertCount(2, $picked);
+        $this->assertSame('https://www.noon.com/egypt-en/breakbase/Z724/p/?o=bbb', $picked->first()['url']);
+    }
+
     public function test_tracking_parameters_are_dropped()
     {
         $this->assertSame(
