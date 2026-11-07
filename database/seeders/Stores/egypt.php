@@ -8,11 +8,11 @@ use App\Enums\ScraperService;
  * Load with:  php artisan buddy:create-stores egypt
  *
  * Stores whose product pages carry Schema.org data use the `schema_org` strategy,
- * which survives page redesigns better than CSS selectors. Shops not listed here
- * (LC Waikiki, Defacto, American Eagle, Colin's, Faces, Hyper One) are auto-created
- * the first time a product URL from them is added, then tuned if needed.
- * Quick-delivery apps (Amazon Now, noon Minutes, Breadfast, Rabbit, talabat mart)
- * price by delivery area and are handled separately.
+ * which survives page redesigns better than CSS selectors.
+ *
+ * Not included (checked Nov 2026): Colin's has no Egyptian web store; Breadfast and
+ * Rabbit are app-only; Amazon Now needs a sign-in; noon Minutes timed out; talabat
+ * mart's catalogue depends on the delivery area.
  */
 
 $egp = [
@@ -21,6 +21,12 @@ $egp = [
         'currency' => 'EGP',
     ],
 ];
+
+// Shops whose pages are built by JavaScript or that block plain requests.
+$browser = array_merge($egp, [
+    'scraper_service' => ScraperService::Api->value,
+    'scraper_service_settings' => '',
+]);
 
 $schemaOrg = [
     'title' => ['type' => 'schema_org', 'value' => null],
@@ -72,10 +78,7 @@ return [
             ['domain' => 'www.noon.com'],
         ],
         'scrape_strategy' => $schemaOrg,
-        'settings' => array_merge($egp, [
-            'scraper_service' => ScraperService::Api->value,
-            'scraper_service_settings' => '',
-        ]),
+        'settings' => $browser,
     ],
     [
         'name' => 'Jumia EG',
@@ -99,10 +102,69 @@ return [
             ['domain' => 'www.carrefouregypt.com'],
         ],
         'scrape_strategy' => $schemaOrg,
-        'settings' => array_merge($egp, [
-            'scraper_service' => ScraperService::Api->value,
-            'scraper_service_settings' => '',
-        ]),
+        'settings' => $browser,
+    ],
+
+    [
+        'name' => 'Hyper One',
+        'initials' => 'H1',
+        'slug' => 'hyper-one',
+        'domains' => [
+            ['domain' => 'hyperone.com.eg'],
+            ['domain' => 'www.hyperone.com.eg'],
+        ],
+        // Pages are built in the browser. Product-page data not checked yet.
+        'scrape_strategy' => $schemaOrg,
+        'settings' => $browser,
+    ],
+
+    // Fashion brands. Plain requests get 403, the browser scraper works.
+    // Product pages assumed to carry Schema.org data: not checked yet.
+    [
+        'name' => 'LC Waikiki EG',
+        'initials' => 'LC',
+        'slug' => 'lc-waikiki-eg',
+        'domains' => [
+            ['domain' => 'lcwaikiki.eg'],
+            ['domain' => 'www.lcwaikiki.eg'],
+        ],
+        'scrape_strategy' => $schemaOrg,
+        'settings' => $browser,
+    ],
+    [
+        'name' => 'DeFacto EG',
+        'initials' => 'DF',
+        'slug' => 'defacto-eg',
+        'domains' => [
+            ['domain' => 'defacto.com.eg'],
+            ['domain' => 'www.defacto.com.eg'],
+        ],
+        'scrape_strategy' => $schemaOrg,
+        'settings' => $browser,
+    ],
+    [
+        'name' => 'American Eagle EG',
+        'initials' => 'AE',
+        'slug' => 'american-eagle-eg',
+        'domains' => [
+            ['domain' => 'americaneagle.com.eg'],
+            ['domain' => 'www.americaneagle.com.eg'],
+        ],
+        'scrape_strategy' => $schemaOrg,
+        'settings' => $browser,
+    ],
+
+    // Beauty. Product pages carry Schema.org Product data and load with plain requests.
+    [
+        'name' => 'Faces EG',
+        'initials' => 'FA',
+        'slug' => 'faces-eg',
+        'domains' => [
+            ['domain' => 'faces.eg'],
+            ['domain' => 'www.faces.eg'],
+        ],
+        'scrape_strategy' => $schemaOrg,
+        'settings' => $egp,
     ],
 
     // Home (set to "Later" in the shop list, kept ready).

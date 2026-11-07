@@ -11,14 +11,17 @@ This fork adds Egyptian shops, their search pages and EGP prices to PriceBuddy.
 | Carrefour EG | Works (browser scraper) | Works (browser scraper) |
 | Jumia EG | Blocked by Cloudflare | Blocked (Draft) |
 | IKEA EG, Raneen | Not tested yet | None yet |
+| Hyper One, LC Waikiki, DeFacto, American Eagle (browser scraper), Faces | Added, product pages not tested yet | None yet |
 
 Tested from an Egyptian home connection in November 2026.
 
-LC Waikiki, Defacto, American Eagle, Colin's, Faces and Hyper One are created
-automatically the first time you add one of their product links.
+Not included: Colin's (no Egyptian web store), Breadfast and Rabbit (app only),
+Amazon Now (needs a sign-in), noon Minutes (didn't load), talabat mart (catalogue
+depends on the delivery area).
 
-Quick-delivery apps (Amazon Now, noon Minutes, Breadfast, Rabbit, talabat mart)
-price by delivery area and are not covered yet.
+"Search via the web" takes results from each shop in turn and stops after 18 priced
+results (set in Settings). noon and Carrefour pages are read with a browser, so a
+search takes 1 to 3 minutes.
 
 ## Set up on Windows
 
