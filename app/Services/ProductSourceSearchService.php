@@ -59,7 +59,14 @@ class ProductSourceSearchService
 
     public function makeScraper(string $query, ?string $brand = null, bool $useCache = true): WebScraperInterface
     {
-        return WebScraper::make($this->source->scraper_service)
+        $scraper = WebScraper::make($this->source->scraper_service);
+
+        // The store's cookies (Stores > Cookies), e.g. a delivery area for noon Minutes.
+        if (filled($cookies = $this->source->store?->cookies)) {
+            $scraper->setCookies($cookies);
+        }
+
+        return $scraper
             ->from($this->buildSearchUrl($query, $brand))
             // Same page cache time as product pages (Settings > Scrape cache ttl).
             ->setCacheMinsTtl(AppSettings::new()->scrape_cache_ttl)
