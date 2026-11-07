@@ -40,4 +40,16 @@ class SavedSearchRunnerTest extends TestCase
         $this->assertSame(['https://a/4', 'https://a/2', 'https://a/1'], $picked->pluck('url')->all());
         $this->assertSame('https://a/5', SavedSearchRunner::cheapest($this->results(), 10)->last()['url']);
     }
+
+    public function test_amazon_links_keep_only_the_product_part()
+    {
+        $this->assertSame(
+            'https://www.amazon.eg/-/en/Crocs-Bayaband-Clog/dp/B077RYB6R8',
+            SavedSearchRunner::canonicalUrl('https://www.amazon.eg/-/en/Crocs-Bayaband-Clog/dp/B077RYB6R8/ref=sr_1_3?dib=abc&keywords=x')
+        );
+        $this->assertSame(
+            'https://www.noon.com/egypt-en/x/p/?o=abc',
+            SavedSearchRunner::canonicalUrl('https://www.noon.com/egypt-en/x/p/?o=abc')
+        );
+    }
 }

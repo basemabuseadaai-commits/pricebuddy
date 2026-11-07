@@ -136,6 +136,27 @@ class SavedSearchRunner
     }
 
     /**
+     * One stable link per product. Amazon search links carry a /ref=... part and a
+     * session token that change on every page load, so keep only up to /dp/<ASIN>.
+     */
+    public static function canonicalUrl(string $url): string
+    {
+        if (preg_match('~^(https?://[^/]*amazon\.[^/]+/(?:.*?/)?dp/[A-Z0-9]{10})~i', $url, $m)) {
+            return $m[1];
+        }
+
+        return $url;
+    }
+
+    /**
+     * Key used to tell whether two links are the same product.
+     */
+    public static function matchKey(string $url): string
+    {
+        return Url::normalizeForMatch(self::canonicalUrl($url));
+    }
+
+    /**
      * @return Collection<int, ProductSource>
      */
     protected function sources(SavedSearch $search): Collection
@@ -174,7 +195,9 @@ class SavedSearchRunner
                     ? self::filterResults($results, [$brand], [], null, null)->all()
                     : $results->all();
             })
-            ->map(fn ($r) => array_merge(['price' => null], Arr::except($r, ['content'])))
+            ->map(fn ($r) => array_merge(['price' => null], Arr::except($r, ['content']), [
+                'url' => self::canonicalUrl((string) $r['url']),
+            ]))
             ->values();
     }
 
@@ -216,14 +239,14 @@ class SavedSearchRunner
     {
         $known = $product->urls()->pluck('url')
             ->merge($product->ignored_urls ?? [])
-            ->map(fn ($url) => Url::normalizeForMatch((string) $url))
+            ->map(fn ($url) => self::matchKey((string) $url))
             ->flip();
 
         $added = 0;
         $failed = 0;
 
         foreach ($picks as $pick) {
-            $normalized = Url::normalizeForMatch((string) $pick['url']);
+            $normalized = self::matchKey((string) $pick['url']);
 
             if ($normalized === '' || $known->has($normalized)) {
                 continue;
@@ -255,14 +278,14 @@ class SavedSearchRunner
         $now = now();
 
         foreach ($picks as $pick) {
-            $seen[Url::normalizeForMatch((string) $pick['url'])] = $now->toIso8601String();
+            $seen[self::matchKey((string) $pick['url'])] = $now->toIso8601String();
         }
 
         $cutoff = $now->copy()->subDays(self::FORGET_AFTER_DAYS);
         $removed = 0;
 
         foreach ($product->urls()->get() as $url) {
-            $normalized = Url::normalizeForMatch($url->url);
+            $normalized = self::matchKey($url->url);
             $lastSeen = $seen[$normalized] ?? null;
 
             // Only URLs this search added; links the user added by hand stay.
