@@ -12,3 +12,5 @@ services:
             - ./database/seeders/Stores/egypt.php:/app/database/seeders/Stores/egypt.php:ro
             - ./database/seeders/ProductSources:/app/database/seeders/ProductSources:ro
             - ./app/Console/Commands/CreateProductSources.php:/app/app/Console/Commands/CreateProductSources.php:ro
+            # Mixes results from every shop in "Search via the web" (see EGYPT.md).
+            - ./app/Services/SearchService.php:/app/app/Services/SearchService.php:ro

@@ -146,12 +146,14 @@ class SearchService
 
         $this->log(__('Using :count product sources', ['count' => $sources->count()]));
 
-        $sources->each(function ($source) {
+        $perSource = [];
+
+        $sources->each(function ($source) use (&$perSource) {
             /** @var ProductSource $source */
             try {
                 $results = $source->search($this->searchQuery);
                 $this->log(__('Found :count results via :source', ['count' => $results->count(), 'source' => $source->name]));
-                $this->results = $this->results->merge($results);
+                $perSource[] = $results->values()->all();
             } catch (Throwable $e) {
                 $msg = __('Error searching via :source', ['source' => $source->name]);
                 $this->log($msg, ['icon' => Icons::Warning->value]);
@@ -161,7 +163,31 @@ class SearchService
             }
         });
 
+        // Interleave the sources (1st of each, then 2nd of each, ...) so the
+        // priced-results limit doesn't fill up from the first source alone.
+        $this->results = $this->results->merge(self::interleave($perSource));
+
         return $this;
+    }
+
+    /**
+     * @param  array<int, array<int, mixed>>  $lists
+     * @return array<int, mixed>
+     */
+    public static function interleave(array $lists): array
+    {
+        $out = [];
+        $max = $lists === [] ? 0 : max(array_map('count', $lists));
+
+        for ($i = 0; $i < $max; $i++) {
+            foreach ($lists as $list) {
+                if (array_key_exists($i, $list)) {
+                    $out[] = $list[$i];
+                }
+            }
+        }
+
+        return $out;
     }
 
     public function getRawResults(): self
