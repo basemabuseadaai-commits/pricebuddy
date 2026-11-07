@@ -6,6 +6,7 @@ use App\Enums\ScraperService;
 use App\Enums\ScraperStrategyType;
 use App\Rules\ScrapeStrategyValue;
 use Illuminate\Contracts\Validation\ValidationRule;
+use App\Models\Store;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CreateStoreRequest extends FormRequest
@@ -15,7 +16,8 @@ class CreateStoreRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        // Checked before validation, so a non-admin always gets a 403 (StorePolicy).
+        return (bool) $this->user()?->can('create', Store::class);
     }
 
     /**

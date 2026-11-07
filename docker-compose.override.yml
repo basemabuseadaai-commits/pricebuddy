@@ -59,6 +59,7 @@ services:
             - ./app/Filament/Resources/StoreResource.php:/app/app/Filament/Resources/StoreResource.php:ro
             - ./app/Filament/Resources/StoreResource/Actions/ImportStoreAction.php:/app/app/Filament/Resources/StoreResource/Actions/ImportStoreAction.php:ro
             - ./app/Filament/Resources/StoreResource/Api/Handlers/CreateHandler.php:/app/app/Filament/Resources/StoreResource/Api/Handlers/CreateHandler.php:ro
+            - ./app/Filament/Resources/StoreResource/Api/Requests/CreateStoreRequest.php:/app/app/Filament/Resources/StoreResource/Api/Requests/CreateStoreRequest.php:ro
             - ./app/Filament/Resources/StoreResource/Api/Handlers/UpdateHandler.php:/app/app/Filament/Resources/StoreResource/Api/Handlers/UpdateHandler.php:ro
             - ./app/Filament/Resources/StoreResource/Api/Transformers/StoreTransformer.php:/app/app/Filament/Resources/StoreResource/Api/Transformers/StoreTransformer.php:ro
             # App name in the logo.

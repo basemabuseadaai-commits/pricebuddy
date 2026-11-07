@@ -366,6 +366,9 @@ class StoreApiTest extends TestCase
             'settings' => ['scraper_service' => ScraperService::Http->value],
         ])->assertForbidden();
         $this->assertDatabaseMissing('stores', ['name' => 'Not allowed']);
+
+        // Refused before validation, so an incomplete body is a 403 too.
+        $this->postJson('/api/stores', ['name' => 'Incomplete'])->assertForbidden();
     }
 
     public function test_can_update_a_store_with_no_creator(): void
