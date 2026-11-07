@@ -24,7 +24,8 @@ return [
         'search_url' => 'https://www.amazon.eg/s?k=:search_term&language=en_AE',
         'extraction_strategy' => [
             'list_container' => ['type' => 'selector', 'value' => '!div[data-component-type="s-search-result"]'],
-            'product_title' => ['type' => 'selector', 'value' => 'a h2 span'], // plain `h2 span` returns the brand
+            // The image alt is the only full title (brand + name); the h2 splits them.
+            'product_title' => ['type' => 'selector', 'value' => 'img.s-image|alt'],
             'product_url' => ['type' => 'selector', 'value' => 'a.a-link-normal[href*="/dp/"]|href', 'prepend' => 'https://www.amazon.eg'],
             'product_price' => ['type' => 'selector', 'value' => '.a-price > .a-offscreen'],
         ],

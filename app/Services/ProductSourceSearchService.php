@@ -187,8 +187,14 @@ class ProductSourceSearchService
             return $value === '' ? null : $value;
         }
 
-        $html = (string) $this->makeScraper(trim($brand.' '.$query), useCache: false)->get()->getBody();
-        $options = self::brandOptions($html, $pattern);
+        $scraper = $this->makeScraper(trim($brand.' '.$query), useCache: false)->get();
+
+        // A failed fetch (timeout, block) says nothing about the brand: try again next run.
+        if ($scraper->getErrors()) {
+            return null;
+        }
+
+        $options = self::brandOptions((string) $scraper->getBody(), $pattern);
         $value = self::matchBrand($options, $brand);
 
         if ($value !== null) {
