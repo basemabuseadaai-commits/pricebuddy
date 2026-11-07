@@ -26,5 +26,9 @@ services:
             - ./app/Console/Commands/RunSavedSearches.php:/app/app/Console/Commands/RunSavedSearches.php:ro
             - ./app/Filament/Resources/SavedSearchResource.php:/app/app/Filament/Resources/SavedSearchResource.php:ro
             - ./app/Filament/Resources/SavedSearchResource:/app/app/Filament/Resources/SavedSearchResource:ro
+            # "Track a search" shortcuts and a clear message when Products > Create has no link.
+            - ./app/Filament/Resources/ProductResource.php:/app/app/Filament/Resources/ProductResource.php:ro
+            - ./app/Filament/Resources/ProductResource/Pages/ListProducts.php:/app/app/Filament/Resources/ProductResource/Pages/ListProducts.php:ro
+            - ./app/Filament/Resources/ProductResource/Widgets/CreateViaSearchForm.php:/app/app/Filament/Resources/ProductResource/Widgets/CreateViaSearchForm.php:ro
             # App name in the logo.
             - ./resources/views/filament/logo.blade.php:/app/resources/views/filament/logo.blade.php:ro

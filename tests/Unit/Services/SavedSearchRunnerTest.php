@@ -25,6 +25,13 @@ class SavedSearchRunnerTest extends TestCase
         $this->assertSame(['https://a/1', 'https://a/2', 'https://a/4'], $kept->pluck('url')->all());
     }
 
+    public function test_required_words_accept_comma_alternatives()
+    {
+        $kept = SavedSearchRunner::filterResults($this->results(), ['korkmaz', 'granite, ceramic'], ['steel, lid'], null, null);
+
+        $this->assertSame(['https://a/1', 'https://a/2'], $kept->pluck('url')->all());
+    }
+
     public function test_excluded_words_and_price_limits()
     {
         $kept = SavedSearchRunner::filterResults($this->results(), ['granite'], ['lid'], 1000, 2000);

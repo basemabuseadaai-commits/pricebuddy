@@ -8,6 +8,7 @@ use App\Models\SavedSearch;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 class CreateSavedSearch extends CreateRecord
 {
@@ -28,6 +29,21 @@ class CreateSavedSearch extends CreateRecord
         $records->each(fn (SavedSearch $search) => RunSavedSearchJob::dispatch($search->getKey()));
 
         return $records->first();
+    }
+
+    /**
+     * Prefill from "Track this search" on the product search (?query=...).
+     */
+    protected function afterFill(): void
+    {
+        $query = trim((string) request()->query('query', ''));
+
+        if ($query === '') {
+            return;
+        }
+
+        $this->data['queries'] = [$query];
+        $this->data['name'] = Str::ucfirst($query);
     }
 
     protected function getCreatedNotificationTitle(): ?string

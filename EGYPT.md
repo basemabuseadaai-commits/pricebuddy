@@ -27,7 +27,7 @@ search takes 1 to 3 minutes.
 
 **Saved searches** (in the menu) track a search instead of fixed links. Type what you
 would put in a shop's search bar, add brands if you want, and optional title words
-(`granite|ceramic` means either) and price limits. Each brand becomes one product on the
+(`granite, ceramic` means either) and price limits. Each brand becomes one product on the
 dashboard, grouped under a tag with the search's name. Every run (default every 2 hours)
 searches each shop again, adds the cheapest matching results to the product, and drops
 results that haven't shown up for 3 days.

@@ -83,7 +83,7 @@ class SavedSearchRunner
     /**
      * Keep results whose title has every required word and none of the excluded
      * words, and whose price (when known) is within the limits. A required word
-     * may list alternatives with "|", e.g. "granite|ceramic".
+     * may list alternatives separated by a comma, e.g. "granite, ceramic" ("|" still works).
      *
      * @param  Collection<int, array<string, mixed>>  $results
      * @param  array<int, string>  $required
@@ -93,14 +93,15 @@ class SavedSearchRunner
     public static function filterResults(Collection $results, array $required, array $exclude, ?float $min, ?float $max): Collection
     {
         $required = array_values(array_filter(array_map('trim', $required)));
-        $exclude = array_values(array_filter(array_map('trim', $exclude)));
+        // An excluded entry may also hold several words separated by commas.
+        $exclude = array_values(array_filter(array_map('trim', Arr::flatten(array_map(fn ($word) => preg_split('/[,|]/', (string) $word), $exclude)))));
 
         return $results->filter(function ($result) use ($required, $exclude, $min, $max) {
             $title = Str::lower((string) ($result['title'] ?? ''));
             $price = $result['price'] ?? null;
 
             foreach ($required as $word) {
-                $options = array_filter(array_map('trim', explode('|', $word)));
+                $options = array_filter(array_map('trim', preg_split('/[,|]/', $word)));
                 if (! collect($options)->contains(fn ($option) => self::hasWord($title, $option))) {
                     return false;
                 }

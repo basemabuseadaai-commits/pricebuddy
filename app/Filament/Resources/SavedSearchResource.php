@@ -55,8 +55,8 @@ class SavedSearchResource extends Resource
                 ->schema([
                     Forms\Components\TagsInput::make('must_include')
                         ->label(__('Title must include'))
-                        ->placeholder('granite|ceramic')
-                        ->helperText(__('Every word must be in the product title. Use | for "either", e.g. granite|ceramic.')),
+                        ->placeholder('granite, ceramic')
+                        ->helperText(__('Every word must be in the product title. Separate words with a comma for "either", e.g. granite, ceramic.')),
                     Forms\Components\TagsInput::make('exclude')
                         ->label(__('Title must not include'))
                         ->placeholder('lid'),
