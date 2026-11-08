@@ -18,7 +18,7 @@ class StoreStrategyDtoBridgeTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = User::factory()->create([
+        $this->user = User::factory()->admin()->create([
             'name' => 'Tester',
             'email' => 'tester@test.com',
             'password' => Hash::make('password'),

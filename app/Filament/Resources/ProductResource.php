@@ -84,6 +84,11 @@ class ProductResource extends Resource
         $components[] = TextInput::make('url')
             ->label('Product URL')
             ->hintIcon(Icons::Help->value, 'The domain of the URL must be in the list of available stores')
+            ->required()
+            ->validationMessages(['required' => __('Paste a shop link here. To track a search without picking links, use Saved searches.')])
+            ->helperText(is_null($productId)
+                ? new HtmlString(__('No link? Use <a href=":url" class="text-primary-600 underline">Saved searches</a> to track what you would type in the shop search bar.', ['url' => SavedSearchResource::getUrl('create')]))
+                : null)
             ->rules([new StoreUrl])
             ->columnSpanFull();
 

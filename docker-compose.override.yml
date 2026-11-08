@@ -1,0 +1,71 @@
+# Egypt setup. Docker Compose loads this file automatically next to docker-compose.yml.
+# It mounts the Egyptian store files from this repository into the official image,
+# so no custom image build is needed yet.
+services:
+    app:
+        environment:
+            APP_NAME: BSBS PRICE CHECKER
+            APP_CURRENCY_LOCALE: ar_EG   # default currency: EGP
+            APP_TIMEZONE: Africa/Cairo
+            AFFILIATE_ENABLED: 'false'   # don't rewrite shop links with affiliate codes
+            DEFAULT_STORES_COUNTRY: egypt  # a fresh install only creates the Egyptian shops
+            # Contact sent to shops that only allow identified bots (Jumia). Set BOT_CONTACT
+            # in the .env file next to this one; it is not stored in the repository.
+            BOT_CONTACT: ${BOT_CONTACT:-}
+            # Security (see config/accounts.php).
+            APP_ENV: production
+            APP_DEBUG: 'false'
+            ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-false}   # true shows a "Sign up" link
+        # Only this PC can open the app. For phone access use a private link (Tailscale).
+        ports: !override
+            # 127.0.0.1 = this PC only. APP_BIND=0.0.0.0 in .env also opens it to the home network.
+            - ${APP_BIND:-127.0.0.1}:8080:80
+        volumes:
+            - ./database/seeders/Stores/egypt.php:/app/database/seeders/Stores/egypt.php:ro
+            - ./database/seeders/ProductSources:/app/database/seeders/ProductSources:ro
+            - ./app/Console/Commands/CreateProductSources.php:/app/app/Console/Commands/CreateProductSources.php:ro
+            # Mixes results from every shop in "Search via the web" (see EGYPT.md).
+            - ./app/Services/SearchService.php:/app/app/Services/SearchService.php:ro
+            # Saved searches: searched again on a schedule, cheapest results tracked.
+            - ./database/migrations/2026_11_07_000000_create_saved_searches_table.php:/app/database/migrations/2026_11_07_000000_create_saved_searches_table.php:ro
+            - ./database/migrations/2026_11_07_100000_add_category_to_saved_searches_table.php:/app/database/migrations/2026_11_07_100000_add_category_to_saved_searches_table.php:ro
+            - ./app/Models/SavedSearch.php:/app/app/Models/SavedSearch.php:ro
+            - ./app/Models/ProductSource.php:/app/app/Models/ProductSource.php:ro
+            - ./app/Services/ProductSourceSearchService.php:/app/app/Services/ProductSourceSearchService.php:ro
+            - ./app/Services/SavedSearchRunner.php:/app/app/Services/SavedSearchRunner.php:ro
+            - ./app/Services/Helpers/ScheduleHelper.php:/app/app/Services/Helpers/ScheduleHelper.php:ro
+            - ./app/Jobs/RunSavedSearchJob.php:/app/app/Jobs/RunSavedSearchJob.php:ro
+            - ./app/Console/Commands/RunSavedSearches.php:/app/app/Console/Commands/RunSavedSearches.php:ro
+            - ./app/Filament/Resources/SavedSearchResource.php:/app/app/Filament/Resources/SavedSearchResource.php:ro
+            - ./app/Filament/Resources/SavedSearchResource:/app/app/Filament/Resources/SavedSearchResource:ro
+            # "Track a search" shortcuts and a clear message when Products > Create has no link.
+            - ./app/Filament/Resources/ProductResource.php:/app/app/Filament/Resources/ProductResource.php:ro
+            - ./app/Filament/Resources/ProductResource/Pages/ListProducts.php:/app/app/Filament/Resources/ProductResource/Pages/ListProducts.php:ro
+            - ./app/Filament/Resources/ProductResource/Widgets/CreateViaSearchForm.php:/app/app/Filament/Resources/ProductResource/Widgets/CreateViaSearchForm.php:ro
+            # Identified bot for Jumia (config/scraper_bot.php).
+            - ./config/scraper_bot.php:/app/config/scraper_bot.php:ro
+            - ./app/Services/Scrapers/Utf8WebScraperHttp.php:/app/app/Services/Scrapers/Utf8WebScraperHttp.php:ro
+            # Accounts and security: sign-up, password reset, profile, password rules,
+            # forced change of default sign-in details, security headers.
+            - ./config/accounts.php:/app/config/accounts.php:ro
+            - ./app/Services/Accounts:/app/app/Services/Accounts:ro
+            - ./app/Filament/Pages/Auth:/app/app/Filament/Pages/Auth:ro
+            - ./app/Http/Middleware/RequirePasswordChange.php:/app/app/Http/Middleware/RequirePasswordChange.php:ro
+            - ./app/Http/Middleware/SecurityHeaders.php:/app/app/Http/Middleware/SecurityHeaders.php:ro
+            - ./app/Providers/Filament/AdminPanelProvider.php:/app/app/Providers/Filament/AdminPanelProvider.php:ro
+            - ./app/Filament/Resources/UserResource.php:/app/app/Filament/Resources/UserResource.php:ro
+            - ./app/Filament/Resources/UserResource/Pages/CreateUser.php:/app/app/Filament/Resources/UserResource/Pages/CreateUser.php:ro
+            # Only an admin can create or edit shared stores; cookies hidden from other users.
+            - ./app/Policies/StorePolicy.php:/app/app/Policies/StorePolicy.php:ro
+            - ./app/Filament/Resources/StoreResource.php:/app/app/Filament/Resources/StoreResource.php:ro
+            - ./app/Filament/Resources/StoreResource/Actions/ImportStoreAction.php:/app/app/Filament/Resources/StoreResource/Actions/ImportStoreAction.php:ro
+            - ./app/Filament/Resources/StoreResource/Api/Handlers/CreateHandler.php:/app/app/Filament/Resources/StoreResource/Api/Handlers/CreateHandler.php:ro
+            - ./app/Filament/Resources/StoreResource/Api/Requests/CreateStoreRequest.php:/app/app/Filament/Resources/StoreResource/Api/Requests/CreateStoreRequest.php:ro
+            - ./app/Filament/Resources/StoreResource/Api/Handlers/UpdateHandler.php:/app/app/Filament/Resources/StoreResource/Api/Handlers/UpdateHandler.php:ro
+            - ./app/Filament/Resources/StoreResource/Api/Transformers/StoreTransformer.php:/app/app/Filament/Resources/StoreResource/Api/Transformers/StoreTransformer.php:ro
+            # App name in the logo.
+            - ./resources/views/filament/logo.blade.php:/app/resources/views/filament/logo.blade.php:ro
+
+    # The scraper is only used by the app inside Docker; don't open it to the network.
+    scraper:
+        ports: !reset []

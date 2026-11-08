@@ -22,7 +22,7 @@ class StoreSelfHealingToggleTest extends TestCase
         SettingsHelper::$settings = null;
         Cache::flush();
         Once::flush();
-        $this->actingAs(User::factory()->create(['email' => 'test@test.com']));
+        $this->actingAs(User::factory()->admin()->create(['email' => 'test@test.com']));
 
         SettingsHelper::setSetting('integrated_services', ['ai' => [
             'enabled' => true,

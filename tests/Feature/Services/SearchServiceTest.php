@@ -302,4 +302,22 @@ class SearchServiceTest extends TestCase
             'The :count placeholder should be replaced with the actual count.'
         );
     }
+
+    public function test_shop_results_must_share_enough_words_with_the_search()
+    {
+        $this->assertTrue(SearchService::isRelevant('Tefal Granite Cookware Set 7 pcs', 'granite cookware'));
+        $this->assertTrue(SearchService::isRelevant('Granite frying pan 28cm', 'granite cookware'));
+        $this->assertFalse(SearchService::isRelevant('Baby bib with print', 'granite cookware'));
+        $this->assertFalse(SearchService::isRelevant('Eau de parfum 100ml', 'granite cookware'));
+        $this->assertTrue(SearchService::isRelevant('Nike Air Max Shoe', 'nike shoes'));
+        $this->assertTrue(SearchService::isRelevant('AirPods Pro', 'air pods'));
+        $this->assertTrue(SearchService::isRelevant('', 'granite cookware'));
+    }
+
+    public function test_an_empty_max_pages_setting_falls_back_to_the_default()
+    {
+        IntegrationHelper::setSettings(['searxng' => ['enabled' => true, 'url' => 'https://searxng.example.com/search', 'max_pages' => null]]);
+
+        $this->assertSame(SearchService::DEFAULT_MAX_PAGES, (new SearchService('laptop'))->getMaxPages());
+    }
 }

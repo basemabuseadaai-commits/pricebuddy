@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Enums\Role;
 use App\Enums\ScraperService;
 use App\Models\Product;
 use App\Models\Store;
@@ -227,6 +228,7 @@ class StoreApiTest extends TestCase
 
     public function test_can_create_store(): void
     {
+        $this->actAsAdmin();
         $storeData = [
             'name' => 'Test Store',
             'domains' => [
@@ -281,6 +283,7 @@ class StoreApiTest extends TestCase
 
     public function test_create_store_validation_fails_with_invalid_data(): void
     {
+        $this->actAsAdmin();
         $invalidData = [
             'name' => '', // Required field empty
             'domains' => [], // Required field empty
@@ -294,6 +297,7 @@ class StoreApiTest extends TestCase
 
     public function test_can_update_store(): void
     {
+        $this->actAsAdmin();
         $store = Store::factory()->create(['user_id' => $this->user->id]);
 
         $updateData = [
@@ -319,27 +323,57 @@ class StoreApiTest extends TestCase
         ]);
     }
 
-    public function test_any_user_can_update_a_store_they_did_not_create(): void
+    public function test_an_admin_can_update_a_store_they_did_not_create(): void
     {
+        $this->actAsAdmin();
         $other = User::factory()->create();
         $store = Store::factory()->create(['user_id' => $other->id]);
 
         $this->putJson("/api/stores/{$store->id}", [
-            'name' => 'Renamed by another user',
+            'name' => 'Renamed by an admin',
             'domains' => $store->domains ?: [['domain' => 'renamed.com']],
             'scrape_strategy' => $store->scrape_strategy,
             'settings' => $store->settings,
             'user_id' => $this->user->id,
         ])
             ->assertSuccessful()
-            ->assertJsonPath('data.name', 'Renamed by another user');
+            ->assertJsonPath('data.name', 'Renamed by an admin');
 
         // user_id records who created the store. An edit does not change it.
         $this->assertSame($other->id, $store->fresh()->user_id);
     }
 
+    /**
+     * Store settings change how prices are read for everyone, so only an admin
+     * can create or edit a store.
+     */
+    public function test_non_admin_cannot_create_or_update_a_store(): void
+    {
+        $mine = Store::factory()->create(['user_id' => $this->user->id]);
+
+        $this->putJson("/api/stores/{$mine->id}", ['name' => 'Renamed', 'domains' => [['domain' => 'renamed.com']]])
+            ->assertForbidden();
+        $this->assertNotSame('Renamed', $mine->fresh()->name);
+
+        $this->postJson('/api/stores', [
+            'name' => 'Not allowed',
+            'domains' => [['domain' => 'not-allowed.com']],
+            'scrape_strategy' => [
+                'title' => ['value' => 'h1', 'type' => 'selector'],
+                'price' => ['value' => '.price', 'type' => 'selector'],
+                'image' => ['value' => 'img', 'type' => 'selector'],
+            ],
+            'settings' => ['scraper_service' => ScraperService::Http->value],
+        ])->assertForbidden();
+        $this->assertDatabaseMissing('stores', ['name' => 'Not allowed']);
+
+        // Refused before validation, so an incomplete body is a 403 too.
+        $this->postJson('/api/stores', ['name' => 'Incomplete'])->assertForbidden();
+    }
+
     public function test_can_update_a_store_with_no_creator(): void
     {
+        $this->actAsAdmin();
         $store = $this->createOwnerlessStore();
 
         $this->putJson("/api/stores/{$store->id}", ['name' => 'Named', 'domains' => [['domain' => 'named.com']]])
@@ -487,6 +521,7 @@ class StoreApiTest extends TestCase
 
     public function test_store_has_correct_slug(): void
     {
+        $this->actAsAdmin();
         $storeData = [
             'name' => 'Test Store Name',
             'domains' => [['domain' => 'teststore.com']],
@@ -613,6 +648,7 @@ class StoreApiTest extends TestCase
 
     public function test_create_ignores_a_client_supplied_user_id(): void
     {
+        $this->actAsAdmin();
         $other = User::factory()->create();
 
         $this->postJson('/api/stores', [
@@ -628,6 +664,21 @@ class StoreApiTest extends TestCase
         ])->assertCreated();
 
         $this->assertSame($this->user->id, Store::where('name', 'Attributed Store')->value('user_id'));
+    }
+
+    public function test_store_cookies_are_returned_to_admins_only(): void
+    {
+        $store = Store::factory()->create(['cookies' => 'session=secret']);
+
+        $this->getJson("/api/stores/{$store->id}")->assertSuccessful()->assertJsonMissingPath('data.cookies');
+
+        $this->actAsAdmin();
+        $this->getJson("/api/stores/{$store->id}")->assertSuccessful()->assertJsonPath('data.cookies', 'session=secret');
+    }
+
+    private function actAsAdmin(): void
+    {
+        $this->user->forceFill(['role' => Role::Admin])->save();
     }
 
     /**

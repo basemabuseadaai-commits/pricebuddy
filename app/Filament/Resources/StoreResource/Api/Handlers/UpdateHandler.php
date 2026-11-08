@@ -35,7 +35,7 @@ class UpdateHandler extends Handlers
     {
         $id = $request->route('id');
 
-        // Stores are shared, so any user can edit any store (StorePolicy).
+        // Stores are shared; only an admin can edit one (StorePolicy).
         $model = static::getModel()::find($id);
 
         if (! $model) {

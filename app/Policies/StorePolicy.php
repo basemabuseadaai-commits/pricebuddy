@@ -6,9 +6,10 @@ use App\Models\Store;
 use App\Models\User;
 
 /**
- * Stores are shared by all users. Any user can view, create and edit any store.
- * Only an admin can delete a store, because a delete removes every user's URLs and
- * prices for that store.
+ * Stores are shared by all users, so their settings (selectors, cookies, AI and
+ * scraper options) change how prices are read for everyone. Any user can see
+ * the list; only an admin can create, edit or delete a store. Adding a product
+ * from a new shop still creates its store automatically.
  */
 class StorePolicy
 {
@@ -24,12 +25,12 @@ class StorePolicy
 
     public function create(User $user): bool
     {
-        return true;
+        return $user->isAdmin();
     }
 
     public function update(User $user, Store $store): bool
     {
-        return true;
+        return $user->isAdmin();
     }
 
     public function delete(User $user, Store $store): bool

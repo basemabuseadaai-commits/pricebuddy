@@ -16,7 +16,7 @@ class StoreAvailabilitySchemaOrgTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->actingAs(User::factory()->create(['email' => 'test@test.com']));
+        $this->actingAs(User::factory()->admin()->create(['email' => 'test@test.com']));
     }
 
     public function test_match_values_hidden_for_schema_org_and_shown_for_selector(): void

@@ -4,6 +4,7 @@ namespace App\Services\Helpers;
 
 use App\Console\Commands\FetchAll;
 use App\Console\Commands\FetchDue;
+use App\Console\Commands\RunSavedSearches;
 use App\Models\UrlResearch;
 use Illuminate\Console\Scheduling\Schedule;
 use Lorisleiva\CronTranslator\CronTranslator;
@@ -46,6 +47,10 @@ class ScheduleHelper
             // The command only enqueues jobs, so it finishes in seconds. Cap the
             // lock so a crashed/unclean run can't block the next minute for the
             // 24h default.
+            ->withoutOverlapping(5);
+        // Run saved searches that are due (each has its own interval)
+        $schedule->command(RunSavedSearches::COMMAND)
+            ->everyFiveMinutes()
             ->withoutOverlapping(5);
         // Prune old log messages
         $schedule->command('model:prune', ['--model' => [LogMessage::class]])->daily();

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ProductResource\Widgets;
 
 use App\Enums\Icons;
 use App\Filament\Concerns\InteractsWithSearchProgress;
+use App\Filament\Resources\SavedSearchResource;
 use App\Jobs\CacheSearchResults;
 use App\Models\Product;
 use App\Services\Helpers\IntegrationHelper;
@@ -105,6 +106,15 @@ class CreateViaSearchForm extends Widget implements HasForms
                             ->label(__('Start a search'))
                             ->icon('heroicon-m-magnifying-glass')
                             ->submit('form'),
+                        Action::make('track_search')
+                            ->label(__('Track this search instead'))
+                            ->tooltip(__('Keeps searching the shops on a schedule, no need to pick results'))
+                            ->icon('heroicon-o-magnifying-glass-circle')
+                            ->color('gray')
+                            ->visible(fn () => ! $this->product)
+                            ->url(fn () => SavedSearchResource::getUrl('create', array_filter([
+                                'query' => $this->getSearchKeywordFromForm() ?: $this->searchQuery,
+                            ]))),
                     ]),
             ])
 

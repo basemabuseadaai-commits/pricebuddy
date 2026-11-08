@@ -24,7 +24,8 @@ class StoreBulkLocaleTest extends TestCase
         parent::setUp();
 
         SettingsHelper::$settings = null;
-        $this->actingAs(User::factory()->create());
+        // Only an admin can change shared store settings.
+        $this->actingAs(User::factory()->admin()->create());
     }
 
     private function storeWithLocale(string $locale, string $currency): Store
@@ -109,5 +110,14 @@ class StoreBulkLocaleTest extends TestCase
             ->assertHasTableBulkActionErrors(['locale_settings.currency' => 'required']);
 
         $this->assertSame('USD', $store->fresh()->currency);
+    }
+
+    public function test_the_bulk_action_is_hidden_from_a_non_admin(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $this->storeWithLocale('en', 'USD');
+
+        Livewire::test(ListStores::class)
+            ->assertTableBulkActionHidden('setLocale');
     }
 }

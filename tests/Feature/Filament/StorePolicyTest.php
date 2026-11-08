@@ -13,22 +13,34 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * Stores are shared. Any user can view and edit any store. Only an admin can delete
- * one, because a delete removes every user's URLs and prices for that store.
+ * Stores are shared. Any user can see them; only an admin can create, edit or
+ * delete one, because store settings change price reading for everyone.
  */
 class StorePolicyTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_any_user_can_view_and_edit_any_store(): void
+    public function test_any_user_can_view_but_only_an_admin_can_create_or_edit(): void
     {
         $user = User::factory()->create();
-        $store = Store::factory()->create(['user_id' => User::factory()->create()->id]);
+        $admin = User::factory()->admin()->create();
+        $store = Store::factory()->create(['user_id' => $user->id]);
 
         $this->assertTrue($user->can('viewAny', Store::class));
         $this->assertTrue($user->can('view', $store));
-        $this->assertTrue($user->can('create', Store::class));
-        $this->assertTrue($user->can('update', $store));
+        $this->assertFalse($user->can('create', Store::class));
+        $this->assertFalse($user->can('update', $store));
+        $this->assertTrue($admin->can('create', Store::class));
+        $this->assertTrue($admin->can('update', $store));
+    }
+
+    public function test_a_non_admin_cannot_open_the_store_create_or_edit_pages(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $store = Store::factory()->create();
+
+        $this->get('/admin/stores/create')->assertForbidden();
+        $this->get("/admin/stores/{$store->id}/edit")->assertForbidden();
     }
 
     public function test_only_an_admin_can_delete_a_store(): void
@@ -41,16 +53,6 @@ class StorePolicyTest extends TestCase
         $this->assertFalse($user->can('deleteAny', Store::class));
         $this->assertTrue($admin->can('delete', $store));
         $this->assertTrue($admin->can('deleteAny', Store::class));
-    }
-
-    public function test_edit_page_hides_delete_from_a_non_admin(): void
-    {
-        $this->actingAs(User::factory()->create());
-        $store = Store::factory()->create();
-
-        Livewire::test(EditStore::class, ['record' => $store->getKey()])
-            ->assertSuccessful()
-            ->assertActionHidden(DeleteAction::class);
     }
 
     public function test_edit_page_shows_delete_to_an_admin(): void

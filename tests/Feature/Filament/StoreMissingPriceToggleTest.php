@@ -16,7 +16,7 @@ class StoreMissingPriceToggleTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->actingAs(User::factory()->create(['email' => 'test@test.com']));
+        $this->actingAs(User::factory()->admin()->create(['email' => 'test@test.com']));
     }
 
     public function test_toggle_is_rendered(): void

@@ -3,11 +3,13 @@
 namespace Tests\Feature\Console;
 
 use App\Console\Commands\BuildSearchResearch;
+use App\Console\Commands\CreateProductSources;
 use App\Console\Commands\CreateStores;
 use App\Console\Commands\FetchAll;
 use App\Console\Commands\InitDatabase;
 use App\Console\Commands\RegeneratePriceCache;
 use App\Models\Product;
+use App\Models\ProductSource;
 use App\Models\Store;
 use App\Models\User;
 use Database\Seeders\StoreSeeder;
@@ -71,6 +73,40 @@ class ConsoleCommandsTest extends TestCase
 
         // Verify at least one store was created
         $this->assertGreaterThan(0, Store::count());
+    }
+
+    public function test_create_stores_command_creates_egypt_stores_in_egp()
+    {
+        $this->artisan(CreateStores::COMMAND, ['country' => 'egypt'])
+            ->assertExitCode(0);
+
+        $amazon = Store::where('slug', 'amazon-eg')->firstOrFail();
+        $this->assertSame('EGP', $amazon->currency);
+        $this->assertTrue(Store::where('slug', 'jumia-eg')->exists());
+    }
+
+    public function test_create_product_sources_command_links_egypt_sources_to_stores()
+    {
+        User::factory()->create();
+        $this->artisan(CreateStores::COMMAND, ['country' => 'egypt'])->assertExitCode(0);
+
+        $this->artisan(CreateProductSources::COMMAND, ['country' => 'egypt'])
+            ->assertExitCode(0);
+
+        $jumia = ProductSource::where('name', 'Jumia Egypt')->firstOrFail();
+        $this->assertSame(Store::where('slug', 'jumia-eg')->value('id'), $jumia->store_id);
+        $this->assertStringContainsString(':search_term', $jumia->search_url);
+
+        // Running again skips existing sources instead of duplicating them.
+        $count = ProductSource::count();
+        $this->artisan(CreateProductSources::COMMAND, ['country' => 'egypt'])->assertExitCode(0);
+        $this->assertSame($count, ProductSource::count());
+    }
+
+    public function test_create_product_sources_command_fails_for_unknown_country()
+    {
+        $this->artisan(CreateProductSources::COMMAND, ['country' => 'atlantis'])
+            ->assertExitCode(1);
     }
 
     public function test_create_stores_command_creates_all_stores()

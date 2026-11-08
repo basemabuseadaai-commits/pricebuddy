@@ -25,7 +25,8 @@ class StoreScrapeStrategyValidationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->user = User::factory()->create();
+        // Only an admin can create or edit a store.
+        $this->user = User::factory()->admin()->create();
         $token = $this->user->createToken('test-token')->plainTextToken;
         $this->withHeaders(['Authorization' => 'Bearer '.$token]);
     }

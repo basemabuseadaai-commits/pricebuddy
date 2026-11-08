@@ -9,6 +9,7 @@ use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Traits\FormHelperTrait;
 use App\Models\User;
 use App\Providers\Filament\AdminPanelProvider;
+use App\Services\Accounts\PasswordRules;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -79,6 +80,9 @@ class UserResource extends Resource
                         Forms\Components\TextInput::make('password')
                             ->label('Password')
                             ->password()
+                            ->revealable()
+                            ->rule(PasswordRules::rule())
+                            ->helperText(__('At least :n characters, with letters and numbers.', ['n' => config('accounts.password_min_length', 10)]))
                             ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                             ->dehydrated(fn ($state) => filled($state))
                             ->required(fn (string $context): bool => $context === 'create'),
