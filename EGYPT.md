@@ -47,7 +47,9 @@ are often just model names ("Court Vision Lo"). Other shops are searched as usua
 ## Accounts and security
 
 - **Only this PC** can open the app (`127.0.0.1:8080`), and the scraper's port is closed.
-  For phone access, use a private link such as Tailscale rather than opening the port.
+  To open it to phones on your home Wi-Fi, put `APP_BIND=0.0.0.0` in `.env` and run
+  `docker compose up -d app`. Away from home, use a private link such as Tailscale, or a
+  tunnel once you have your own strong password.
 - **Default sign-in details must be changed.** An account still using `admin@example.com`
   or a password like `admin` is sent to **My profile** until both are changed.
 - **Passwords:** at least 10 characters with letters and numbers. Changing your email or

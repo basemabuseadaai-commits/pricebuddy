@@ -18,7 +18,8 @@ services:
             ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-false}   # true shows a "Sign up" link
         # Only this PC can open the app. For phone access use a private link (Tailscale).
         ports: !override
-            - 127.0.0.1:8080:80
+            # 127.0.0.1 = this PC only. APP_BIND=0.0.0.0 in .env also opens it to the home network.
+            - ${APP_BIND:-127.0.0.1}:8080:80
         volumes:
             - ./database/seeders/Stores/egypt.php:/app/database/seeders/Stores/egypt.php:ro
             - ./database/seeders/ProductSources:/app/database/seeders/ProductSources:ro
