@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Dto\StandardStrategyDto;
 use App\Models\ProductSource;
+use App\Models\Store;
 use App\Services\Helpers\CurrencyHelper;
 use App\Settings\AppSettings;
 use Illuminate\Support\Collection;
@@ -310,8 +311,15 @@ class ProductSourceSearchService
         $strategy = data_get($this->source, 'extraction_strategy', []);
 
         $scraper = $this->makeScraper($query, $brand)->get();
+        $errors = $scraper->getErrors();
 
-        if ($errors = $scraper->getErrors()) {
+        // Blocked search page? Try Firecrawl once, if the store opted in.
+        if (FirecrawlService::looksBlocked($scraper->getBody(), $errors ?: [])
+            && ($firecrawlPage = $this->firecrawlPage($query, $brand))) {
+            return $this->scrapeOption($firecrawlPage, ($strategy['list_container']));
+        }
+
+        if ($errors) {
             $this->errorLog('Error scraping Product Source search result page', [
                 'store_id' => $this->source->getKey(),
                 'errors' => $errors,
@@ -320,7 +328,31 @@ class ProductSourceSearchService
             return collect();
         }
 
+        // An empty result list alone does not trigger Firecrawl: many searches simply
+        // have no matches, and each Firecrawl page costs credits.
         return $this->scrapeOption($scraper, ($strategy['list_container']));
+    }
+
+    /**
+     * The search page fetched through Firecrawl, or null when neither this search source
+     * nor its store has opted in,
+     * Firecrawl is off, or it couldn't get the page either.
+     */
+    protected function firecrawlPage(string $query, ?string $brand): ?WebScraperInterface
+    {
+        $firecrawl = FirecrawlService::new();
+        $store = $this->source->store;
+        $optedIn = data_get($this->source->settings, 'firecrawl_fallback')
+            || ($store instanceof Store && $store->firecrawl_fallback);
+
+        if (! $optedIn || ! $firecrawl->isEnabled()) {
+            return null;
+        }
+
+        $url = $this->buildSearchUrl($query, $brand);
+        $html = $firecrawl->fetchHtml($url);
+
+        return $html === null ? null : WebScraper::http()->from($url)->setBody($html);
     }
 
     /**

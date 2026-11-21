@@ -33,6 +33,7 @@ use Spatie\Sluggable\SlugOptions;
  * @property string $scraper_service
  * @property array $scraper_options
  * @property bool $ai_extraction_enabled
+ * @property bool $firecrawl_fallback
  * @property string|null $ai_provider_id
  * @property bool $ai_self_healing_disabled
  * @property bool $missing_price_out_of_stock
@@ -227,6 +228,13 @@ class Store extends Model
     {
         return Attribute::make(
             get: fn (): bool => (bool) data_get($this->settings, 'ai_self_healing_disabled', false),
+        );
+    }
+
+    public function firecrawlFallback(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): bool => (bool) data_get($this->settings, 'firecrawl_fallback', false),
         );
     }
 

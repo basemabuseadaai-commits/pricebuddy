@@ -6,6 +6,7 @@ use App\Enums\AiFeature;
 use App\Enums\Icons;
 use App\Enums\ScraperService;
 use App\Enums\ScraperStrategyType;
+use App\Services\FirecrawlService;
 use App\Services\Helpers\IntegrationHelper;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Section;
@@ -76,6 +77,12 @@ trait HasScraperTrait
             Toggle::make('settings.missing_price_out_of_stock')
                 ->label('Treat a missing price as out of stock')
                 ->helperText('For stores that remove the price when a product is out of stock (e.g. Amazon). A page with a title but no price is marked out of stock instead of failing. A broken price selector will also look like out of stock.')
+                ->columnSpanFull(),
+
+            Toggle::make('settings.firecrawl_fallback')
+                ->label('Use Firecrawl when blocked')
+                ->helperText('If this shop blocks the normal scrape (403, bot check, empty page), fetch the page once through Firecrawl instead. Costs Firecrawl credits. Needs Settings > Scraping > Firecrawl.')
+                ->hidden(fn (): bool => ! FirecrawlService::new()->isEnabled())
                 ->columnSpanFull(),
 
             Toggle::make('settings.ai_extraction_enabled')
