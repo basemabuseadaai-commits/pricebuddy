@@ -97,6 +97,16 @@ class ScrapeUrl
 
     public bool $logErrors = true;
 
+    /**
+     * Firecrawl is tried at most once per scrape, however many attempts are made.
+     */
+    protected bool $firecrawlTried = false;
+
+    /**
+     * 'firecrawl' when the result came through the Firecrawl fallback.
+     */
+    public ?string $fetchedVia = null;
+
     public function __construct(protected string $url)
     {
         // @phpstan-ignore-next-line - withContext is valid.
@@ -228,8 +238,16 @@ class ScrapeUrl
             }
 
             $page = $scraper->get();
+            $errors = $scraper->getErrors();
 
-            if ($errors = $scraper->getErrors()) {
+            // Blocked (403, bot wall, empty page)? Try Firecrawl once, if this store opted in.
+            if (FirecrawlService::looksBlocked($page->getBody(), $errors ?: [])
+                && ($firecrawlPage = $this->firecrawlPage($store))) {
+                $page = $firecrawlPage;
+                $errors = [];
+            }
+
+            if ($errors) {
                 $this->errorLog('Error scraping URL', [
                     'store_id' => $store->getKey(),
                     'errors' => $errors,
@@ -239,18 +257,12 @@ class ScrapeUrl
                 return $output;
             }
 
-            $strategy = $store->scrape_strategy;
+            $output = $this->extractFields($page, $store, $output);
 
-            foreach ($this->keys as $key) {
-                $slot = $strategy->{$key} ?? null;
-                $output[$key] = $slot instanceof StandardStrategyDto
-                    ? $this->scrapeOption($page, $slot, $key)
-                    : null;
+            // The page loaded but nothing could be read from it: perhaps a bot wall we don't recognise.
+            if (blank($output['title'] ?? null) && ($firecrawlPage = $this->firecrawlPage($store))) {
+                $output = $this->extractFields($firecrawlPage, $store, $output);
             }
-
-            $output['body'] = $page->getBody();
-            $output['errors'] = $scraper->getErrors();
-            $output = $this->applyNotFoundPageGuards($output);
         } catch (Exception $e) {
             $this->errorLog('Error scraping URL', [
                 'error' => $e->getMessage(),
@@ -258,6 +270,54 @@ class ScrapeUrl
         }
 
         return $output;
+    }
+
+    /**
+     * Read the store's fields from a fetched page.
+     */
+    protected function extractFields(WebScraperInterface $page, Store $store, array $output): array
+    {
+        $strategy = $store->scrape_strategy;
+
+        foreach ($this->keys as $key) {
+            $slot = $strategy->{$key} ?? null;
+            $output[$key] = $slot instanceof StandardStrategyDto
+                ? $this->scrapeOption($page, $slot, $key)
+                : null;
+        }
+
+        $output['body'] = $page->getBody();
+        $output['errors'] = $page->getErrors();
+
+        return $this->applyNotFoundPageGuards($output);
+    }
+
+    /**
+     * The page fetched through Firecrawl, at most once per ScrapeUrl, or null when the
+     * store hasn't opted in, Firecrawl is off, or it couldn't get the page either.
+     */
+    protected function firecrawlPage(Store $store): ?WebScraperInterface
+    {
+        if ($this->firecrawlTried) {
+            return null;
+        }
+
+        $firecrawl = FirecrawlService::new();
+
+        if (! $firecrawl->isEnabledFor($store)) {
+            return null;
+        }
+
+        $this->firecrawlTried = true;
+        $html = $firecrawl->fetchHtml($this->url);
+
+        if ($html === null) {
+            return null;
+        }
+
+        $this->fetchedVia = 'firecrawl';
+
+        return WebScraper::http()->from($this->url)->setBody($html);
     }
 
     /**

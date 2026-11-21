@@ -95,6 +95,52 @@ are often just model names ("Court Vision Lo"). Other shops are searched as usua
 PriceBuddy checks prices on a schedule, keeps the history, and shows a deal score once it
 has about 14 days of prices.
 
+## Firecrawl for blocked shops (optional, paid)
+
+Some shops block automated visits (Jumia's Cloudflare check, sometimes noon or Amazon).
+[Firecrawl](https://www.firecrawl.dev/) is a paid scraping service that can often still
+read those pages. PriceBuddy only uses it as a fallback: the normal scrape runs first, and
+Firecrawl is called once only when that scrape is blocked (an error such as 403, an empty
+page, or a bot check page), or a product page loads but no title can be read. Search pages
+with zero results do not trigger it, because those are usually real "no matches".
+
+Firecrawl needs its **own** key (it starts with `fc-`). An AI key such as Gemini's does not work.
+
+1. Sign up at firecrawl.dev and copy your API key from its dashboard.
+2. Put the key in **one** of these places:
+   - **Settings > Scraping > Firecrawl**: switch it on and paste the key. It is saved
+     encrypted (with the app's `APP_KEY`, like the AI keys) and is never shown again, not
+     even to an admin. Leave the field blank later to keep the saved key.
+   - or the `.env` file next to `docker-compose.yml`: `FIRECRAWL_API_KEY=fc-...`, then
+     `docker compose up -d app` and `docker compose exec app php artisan optimize`.
+     A key in `.env` is used instead of the one in Settings. You still switch Firecrawl on
+     in Settings.
+3. Choose the **proxy** (Auto is a good start; Enhanced costs more credits per page) and the
+   **max pages per day** (default 50). Once the limit is hit, Firecrawl is skipped until
+   the next day.
+4. On each shop that needs it, open **Stores > (shop) > Scraper** and switch on
+   **Use Firecrawl when blocked**. For search pages only, the same switch on a
+   **Product source** works too.
+
+Each fetched page is kept for the scrape cache time (Settings), so a page isn't paid for twice
+in that time. Every Firecrawl fetch, failure, and the daily-limit stop is written to the logs,
+without the key.
+
+How the key is protected:
+
+- It stays on the server. It is never sent to the browser (the settings form is blank),
+  never written to logs or error messages, and not stored in the repository.
+- It is only sent to `https://api.firecrawl.dev`. The app refuses to send it over plain http,
+  and the address can't be changed from the web pages.
+- Store cookies (for example a delivery area or a sign-in) are never sent to Firecrawl.
+- Only an admin can change settings and store settings. The daily page limit caps the cost
+  if something goes wrong.
+- If you think the key has leaked, delete it in the Firecrawl dashboard and make a new one.
+- Keep the `.env` file private: it holds `APP_KEY`, which decrypts saved keys.
+
+Note: Firecrawl gets past bot checks that a shop put up on purpose. Switch it on only for
+shops where you are fine with that.
+
 ## Updating the shop files
 
 After changing `database/seeders/Stores/egypt.php` or

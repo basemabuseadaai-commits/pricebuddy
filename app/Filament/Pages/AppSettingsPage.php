@@ -15,6 +15,7 @@ use App\Filament\Traits\FormHelperTrait;
 use App\Models\UrlResearch;
 use App\Rules\ValidCron;
 use App\Services\AiService;
+use App\Services\FirecrawlService;
 use App\Services\Helpers\CurrencyHelper;
 use App\Services\Helpers\IntegrationHelper;
 use App\Services\Helpers\LocaleHelper;
@@ -130,8 +131,32 @@ class AppSettingsPage extends SettingsPage
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
+    /**
+     * Never send saved keys to the browser, not even encrypted. A blank key field
+     * means "keep the current key" when saving.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        data_set($data, 'integrated_services.firecrawl.api_key', null);
+
+        foreach (array_keys((array) data_get($data, 'integrated_services.ai.providers', [])) as $index) {
+            data_set($data, "integrated_services.ai.providers.{$index}.api_key", null);
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $data = $this->encryptFirecrawlKey($data);
+
         $existingProviders = collect(
             data_get(AppSettings::new()->toArray(), 'integrated_services.ai.providers', [])
         );
@@ -169,6 +194,27 @@ class AppSettingsPage extends SettingsPage
         return $data;
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function encryptFirecrawlKey(array $data): array
+    {
+        $path = 'integrated_services.firecrawl.api_key';
+        $submitted = trim((string) data_get($data, $path));
+
+        if ($submitted === '') {
+            // Blank: keep the stored ciphertext.
+            data_set($data, $path, data_get(AppSettings::new()->toArray(), $path));
+
+            return $data;
+        }
+
+        data_set($data, $path, Crypt::encryptString($submitted));
+
+        return $data;
+    }
+
     public function form(Form $form): Form
     {
         return $form->schema([
@@ -188,6 +234,7 @@ class AppSettingsPage extends SettingsPage
                         ->schema([
                             $this->getScrapeSection(),
                             $this->getSearXngSettings(),
+                            $this->getFirecrawlSettings(),
                         ]),
 
                     Tabs\Tab::make('Notifications')
@@ -521,6 +568,43 @@ class AppSettingsPage extends SettingsPage
                     ->default(SearchService::DEFAULT_MAX_PAGES),
             ],
             new HtmlString('Automatically search for additional products urls via <a href="https://searxng.org/" target="_blank">SearXng</a>'),
+            flat: true
+        );
+    }
+
+    protected function getFirecrawlSettings(): Group
+    {
+        return self::makeSettingsSection(
+            'Firecrawl',
+            self::INTEGRATED_SERVICES_KEY,
+            IntegratedServices::Firecrawl->value,
+            [
+                TextInput::make('api_key')
+                    ->label('Firecrawl API key')
+                    ->password()
+                    ->autocomplete('new-password')
+                    ->placeholder(fn (): string => FirecrawlService::hasStoredKey() ? 'Saved (hidden). Type a new key to replace it.' : 'fc-...')
+                    ->helperText(fn (): string => filled(config('services.firecrawl.key'))
+                        ? 'FIRECRAWL_API_KEY is set in .env and is used instead of this field.'
+                        : 'Saved encrypted and never shown again. Leave blank to keep the current key.'),
+                Select::make('proxy')
+                    ->label('Proxy')
+                    ->options([
+                        'auto' => 'Auto: basic first, stronger proxy only if blocked',
+                        'basic' => 'Basic: cheapest',
+                        'enhanced' => 'Enhanced: for hard sites, costs more credits',
+                    ])
+                    ->default(FirecrawlService::DEFAULT_PROXY)
+                    ->required(),
+                TextInput::make('daily_limit')
+                    ->label('Max Firecrawl pages per day')
+                    ->helperText(fn (): string => 'Stops spending credits after this many pages. Used today: '.FirecrawlService::new()->usedToday())
+                    ->integer()
+                    ->minValue(1)
+                    ->default(FirecrawlService::DEFAULT_DAILY_LIMIT)
+                    ->required(),
+            ],
+            new HtmlString('Paid fallback for shops that block normal scraping, via <a href="https://www.firecrawl.dev/" target="_blank">Firecrawl</a>. Only used for stores with "Use Firecrawl when blocked" switched on, and only after the normal scrape fails.'),
             flat: true
         );
     }

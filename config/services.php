@@ -35,6 +35,14 @@ return [
         ],
     ],
 
+    // Optional paid fallback for blocked shops (app/Services/FirecrawlService.php).
+    // A key here overrides the one saved in Settings > Scraping > Firecrawl.
+    'firecrawl' => [
+        'key' => env('FIRECRAWL_API_KEY'),
+        'url' => env('FIRECRAWL_URL', 'https://api.firecrawl.dev'),
+        'timeout' => (int) env('FIRECRAWL_TIMEOUT', 90),
+    ],
+
     'pushover' => [
         'token' => env('PUSHOVER_APP_TOKEN'),
     ],

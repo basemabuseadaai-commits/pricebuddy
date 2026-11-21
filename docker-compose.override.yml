@@ -12,6 +12,9 @@ services:
             # Contact sent to shops that only allow identified bots (Jumia). Set BOT_CONTACT
             # in the .env file next to this one; it is not stored in the repository.
             BOT_CONTACT: ${BOT_CONTACT:-}
+            # Optional Firecrawl key for shops that block scraping (see EGYPT.md). Set it in
+            # the .env file next to this one, or in Settings > Scraping > Firecrawl.
+            FIRECRAWL_API_KEY: ${FIRECRAWL_API_KEY:-}
             # Security (see config/accounts.php).
             APP_ENV: production
             APP_DEBUG: 'false'
@@ -63,6 +66,14 @@ services:
             - ./app/Filament/Resources/StoreResource/Api/Requests/CreateStoreRequest.php:/app/app/Filament/Resources/StoreResource/Api/Requests/CreateStoreRequest.php:ro
             - ./app/Filament/Resources/StoreResource/Api/Handlers/UpdateHandler.php:/app/app/Filament/Resources/StoreResource/Api/Handlers/UpdateHandler.php:ro
             - ./app/Filament/Resources/StoreResource/Api/Transformers/StoreTransformer.php:/app/app/Filament/Resources/StoreResource/Api/Transformers/StoreTransformer.php:ro
+            # Firecrawl fallback for shops that block scraping (opt-in per store).
+            - ./app/Services/FirecrawlService.php:/app/app/Services/FirecrawlService.php:ro
+            - ./app/Services/ScrapeUrl.php:/app/app/Services/ScrapeUrl.php:ro
+            - ./app/Enums/IntegratedServices.php:/app/app/Enums/IntegratedServices.php:ro
+            - ./app/Models/Store.php:/app/app/Models/Store.php:ro
+            - ./app/Filament/Pages/AppSettingsPage.php:/app/app/Filament/Pages/AppSettingsPage.php:ro
+            - ./app/Filament/Concerns/HasScraperTrait.php:/app/app/Filament/Concerns/HasScraperTrait.php:ro
+            - ./config/services.php:/app/config/services.php:ro
             # App name in the logo.
             - ./resources/views/filament/logo.blade.php:/app/resources/views/filament/logo.blade.php:ro
 
